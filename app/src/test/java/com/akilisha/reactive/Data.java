@@ -32,7 +32,7 @@ public class Data {
 
     public static Data observe() {
         Data0 data = new Data0();
-        data.setObs(new Observable() {
+        data.setObs(new Observer() {
 
             @Override
             public void set(Object source, String field, Object oldValue, Object newValue) {

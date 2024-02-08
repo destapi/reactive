@@ -1,8 +1,8 @@
 # Data object Observer
 
-__Reactive__ is a tiny utility library for transforming any data class into an Observable data object, through the use of a __Observable__ listener. This is in a lot of ways similar to the __Proxy__ object in __JavaScript__, for those who may be familiar with it.
+__Reactive__ is a tiny utility library for transforming any data class into an observable data object, through the use of an __Observer__ implementation. This feature is in a lot of ways similar to the __Proxy__ object in __JavaScript__, for those who may be familiar with it.
 
-This functionality can be extended to load the transformed bytecode during the pre-main phase of a java program, or even generate class files during the build phase (with gradle or maven) through use of plugins. There are currently no plugins created yet for the build tools.
+This functionality can be extended to load transformed bytecode during the pre-main phase of a java program, or even to generate class files during the build phase (with gradle or maven) through use of plugins. There are currently no plugins created yet for the build tools.
 
 The example shown here illustrates using this utility in standalone mode in a java program.
 
@@ -41,12 +41,12 @@ public class Data {
 }
 ```
 
-## Example of Observable instance
+## Example of Observer instance
 
 This object is created by the user to receive data events whenever setters or getters in the data object of interest are accessed.
 
 ```java
-Observable watch = new Observable() {
+Observer watch = new Observer() {
 
     @Override
     public void set(Object source, String field, Object oldValue, Object newValue) {
@@ -64,10 +64,10 @@ Observable watch = new Observable() {
 
 ## Example of transformation 
 
-The transformation of a class into a participating Observable is done be passing the target class and Observer instance to the static __observe__ method of the __Reactive__ class.
+The transformation of a class into a participating observable is done be passing the __target class__ and __Observer__ instance to the static __observe__ method of the __Reactive__ class.
 
 ```java
-public class RunObservable {
+public class RunObserver {
 
     public static void main(String[] args) throws IOException {
         generateRuntime();
@@ -104,12 +104,12 @@ getting value of property 'verified' in class 'com.akilisha.reactive.Data0' with
 Is Stephano_2 verified? true
 ```
 
-## Generating the Observable class file
+## Generating the observable class file
 
 This can optionally be done during the build phase of a java application so that the class files may be loaded by the default application classloader during normal startup.
 
 ```java
-public class GenObservable {
+public class GenObserver {
 
     public static void main(String[] args) throws IOException {
         generateToFile(Reactive.defaultBuildPath, String.valueOf(LocalTime.now().getSecond()));
@@ -121,8 +121,85 @@ public class GenObservable {
 }
 ```
 
+## Extending the idea further 
+
+This idea of the Observer utility can be extrapolated further and used for example, to generate data events, which would effectively create a data stream emanating from data changing in the observed instances. This can be illustrated easily using RXjava's Observable object.
+
+```java 
+class SomeEventGenerator {
+
+    Observer watch;
+
+    Observable<String> observable = Observable.create(new ObservableOnSubscribe<String>() {
+
+        @Override
+        public void subscribe(@NonNull ObservableEmitter<String> emitter) throws Throwable {
+            watch = new Observer() {
+
+                @Override
+                public void set(Object source, String field, Object oldValue, Object newValue) {
+                    emitter.onNext("updating value: " + newValue);
+                }
+
+                @Override
+                public void get(Object source, String field, Object value) {
+                    emitter.onNext("accessing value: " + value);
+                }
+            };
+        }
+    });
+
+    public Observer getObserver() {
+        return Objects.requireNonNull(watch, "You have to subscribed to Observable first before this step");
+    }
+
+    public Observable<String> getObservable() {
+        return observable;
+    }
+}
+```
+
+Once the __RXjava__ Observable has been set up, the __Observer__ can then be passed on to any number of data objects whose data is of interest. In this example, the data change made to the data object is simulated using keyboard input. This data change can be triggered by any other means imaginable.
+
+```java
+public class DataSimulate {
+
+    public static void main(String[] args) throws IOException {
+        // some data source somewhere
+        SomeEventGenerator gen = new SomeEventGenerator();
+        gen.getObservable().subscribe(next -> {
+            System.out.println("Event generated: " + next);
+        });
+
+        // decorated data object
+        Data data = Reactive.observe(Data.class, gen.getObserver());
+
+        // simulated data changes
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
+            String line = null;
+            while ((line = br.readLine()) != null) {
+                data.setName(line);     // updating
+                data.getName();         // acessing
+            }
+        }
+    }
+}
+```
+
+The output generated by this example will look like shown below
+
+```bash
+one
+Event generated: updating value: one
+Event generated: accessing value: one
+two
+Event generated: updating value: two
+Event generated: accessing value: two
+three
+Event generated: updating value: three
+Event generated: accessing value: three
+```
+
 ## Summary 
 
-This idea of the Observable utility can be extrapolated further and used for example, to generate data events, which would effectively create a data stream emanating from data changing in the observed instances.
-
-The sky is truly the limit in what one can do!
+The sky is truly the limit for what anyone can do with this power!

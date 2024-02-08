@@ -39,16 +39,16 @@ public class GetterVisitor extends MethodVisitor{
 
         // call observer if not null
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitFieldInsn(GETFIELD, baseClassInternal, "obs", Type.getDescriptor(Observable.class));
+        mv.visitFieldInsn(GETFIELD, baseClassInternal, "obs", Type.getDescriptor(Observer.class));
 
         Label ifNull = new Label();
         mv.visitJumpInsn(IFNULL, ifNull);
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitFieldInsn(GETFIELD, baseClassInternal, "obs", Type.getDescriptor(Observable.class));
+        mv.visitFieldInsn(GETFIELD, baseClassInternal, "obs", Type.getDescriptor(Observer.class));
         mv.visitVarInsn(ALOAD, 0);
         mv.visitLdcInsn(property);
         mv.visitVarInsn(ALOAD, 1);
-        mv.visitMethodInsn(INVOKEINTERFACE, Type.getInternalName(Observable.class), "get",
+        mv.visitMethodInsn(INVOKEINTERFACE, Type.getInternalName(Observer.class), "get",
                 "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)V", true);
         mv.visitLabel(ifNull);
 

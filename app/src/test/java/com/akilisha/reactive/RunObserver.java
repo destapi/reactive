@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RunObservable {
+public class RunObserver {
 
     public static void main(String[] args) throws IOException {
         generateRuntime();
@@ -21,7 +21,7 @@ public class RunObservable {
         list.forEach(a -> System.out.printf("Is %s verified? %s", a.getName(), a.isVerified()));
     }
 
-    public static Observable watch = new Observable() {
+    public static Observer watch = new Observer() {
 
         @Override
         public void set(Object source, String field, Object oldValue, Object newValue) {

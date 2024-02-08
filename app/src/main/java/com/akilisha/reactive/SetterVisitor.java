@@ -41,18 +41,18 @@ public class SetterVisitor extends MethodVisitor {
         mv.visitVarInsn(ASTORE, 2);
 
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitFieldInsn(GETFIELD, baseClassInternal, "obs", Type.getDescriptor(Observable.class));
+        mv.visitFieldInsn(GETFIELD, baseClassInternal, "obs", Type.getDescriptor(Observer.class));
 
         Label ifNull = new Label();
         mv.visitJumpInsn(IFNULL, ifNull);
         mv.visitVarInsn(ALOAD, 0);
         mv.visitFieldInsn(GETFIELD, baseClassInternal, "obs",
-                Type.getDescriptor(Observable.class));
+                Type.getDescriptor(Observer.class));
         mv.visitVarInsn(ALOAD, 0);
         mv.visitLdcInsn(property);
         mv.visitVarInsn(ALOAD, 2);
         mv.visitVarInsn(ALOAD, 1);
-        mv.visitMethodInsn(INVOKEINTERFACE, Type.getInternalName(Observable.class),
+        mv.visitMethodInsn(INVOKEINTERFACE, Type.getInternalName(Observer.class),
                 "set",
                 "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;)V",
                 true);

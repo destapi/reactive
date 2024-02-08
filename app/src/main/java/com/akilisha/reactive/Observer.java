@@ -1,6 +1,6 @@
 package com.akilisha.reactive;
 
-public interface Observable {
+public interface Observer {
     
     void set(Object source, String field, Object oldValue, Object newValue);
 

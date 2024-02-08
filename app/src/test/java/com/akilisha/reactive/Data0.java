@@ -2,7 +2,7 @@
 package com.akilisha.reactive;
 
 public class Data0 extends Data {
-   private Observable obs;
+   private Observer obs;
 
    @Override
    public String getName() {
@@ -44,7 +44,7 @@ public class Data0 extends Data {
       super.setVerified((boolean)var1);
    }
 
-   public void setObs(Observable var1) {
+   public void setObs(Observer var1) {
       this.obs = var1;
    }
 }

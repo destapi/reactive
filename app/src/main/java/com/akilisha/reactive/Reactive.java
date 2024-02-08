@@ -34,14 +34,14 @@ public class Reactive extends ClassLoader {
         return super.findClass(name);
     }
 
-    public static <T> T observe(Class<T> target, Observable observable) {
+    public static <T> T observe(Class<T> target, Observer observer) {
         String decoratedClass = target.getName() + suffix;
         try {
             Class<?> generated = Class.forName(decoratedClass, true, loader);
             Object data = generated.getConstructor().newInstance();
-            MethodType mt = MethodType.methodType(void.class, Observable.class);
+            MethodType mt = MethodType.methodType(void.class, Observer.class);
             MethodHandle setter = lookup.findVirtual(generated, "setObs", mt);
-            setter.invoke(data, observable);
+            setter.invoke(data, observer);
             return (T) data;
         } catch (Throwable e) {
             throw new RuntimeException("Problem generating new class " + decoratedClass, e);

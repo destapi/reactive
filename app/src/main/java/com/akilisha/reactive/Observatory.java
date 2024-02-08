@@ -91,12 +91,12 @@ public class Observatory extends ClassVisitor {
     }
 
     void addObservableField() {
-        FieldVisitor fv = cw.visitField(ACC_PRIVATE, "obs", Type.getDescriptor(Observable.class), null, null);
+        FieldVisitor fv = cw.visitField(ACC_PRIVATE, "obs", Type.getDescriptor(Observer.class), null, null);
         fv.visitEnd();
     }
 
     void addSetterForObservable() {
-        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "setObs", "(" + Type.getDescriptor(Observable.class) + ")V", null,
+        MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "setObs", "(" + Type.getDescriptor(Observer.class) + ")V", null,
                 null);
         mv.visitCode();
 
@@ -105,7 +105,7 @@ public class Observatory extends ClassVisitor {
         // load observable to the stack
         mv.visitVarInsn(ALOAD, 1);
         // assign variable
-        mv.visitFieldInsn(PUTFIELD, baseClassInternal, "obs", Type.getDescriptor(Observable.class));
+        mv.visitFieldInsn(PUTFIELD, baseClassInternal, "obs", Type.getDescriptor(Observer.class));
         // return
         mv.visitInsn(RETURN);
         // end code section
