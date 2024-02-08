@@ -202,4 +202,4 @@ Event generated: accessing value: three
 
 ## Summary 
 
-The sky is truly the limit for what anyone can do with this power!
+The sky is truly the limit for what anyone can do with this power! If you run into a problem with the utility or envision a usage scenarion that would be nice to have, please open a GitHub issue to kick off a conversaton.
