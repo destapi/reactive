@@ -1,10 +1,10 @@
 # Data object Observer
 
-A small utility for transforming any data object into an Observable data object, through the use of a callback listener.
+__Reactive__ is a tiny utility library for transforming any data class into an Observable data object, through the use of a __Observable__ listener. This is in a lot of ways similar to the __Proxy__ object in __JavaScript__, for those who may be familiar with it.
 
-This functionality can be extended to load classes during the pre-main phase of a java program, or in a build phase through plugins like with gradle or maven.
+This functionality can be extended to load the transformed bytecode during the pre-main phase of a java program, or even generate class files during the build phase (with gradle or maven) through use of plugins. There are currently no plugins created yet for the build tools.
 
-The example shown here illustrates using this utility in standalone mode in a program.
+The example shown here illustrates using this utility in standalone mode in a java program.
 
 ## Example data class
 
@@ -67,7 +67,7 @@ Observable watch = new Observable() {
 The transformation of a class into a participating Observable is done be passing the target class and Observer instance to the static __observe__ method of the __Reactive__ class.
 
 ```java
-public class MakeObservable {
+public class RunObservable {
 
     public static void main(String[] args) throws IOException {
         generateRuntime();
@@ -102,6 +102,23 @@ getting value of property 'verified' in class 'com.akilisha.reactive.Data0' with
 Is Stephano_1 verified? truegetting value of property 'name' in class 'com.akilisha.reactive.Data0' with value Stephano_2
 getting value of property 'verified' in class 'com.akilisha.reactive.Data0' with value true
 Is Stephano_2 verified? true
+```
+
+## Generating the Observable class file
+
+This can optionally be done during the build phase of a java application so that the class files may be loaded by the default application classloader during normal startup.
+
+```java
+public class GenObservable {
+
+    public static void main(String[] args) throws IOException {
+        generateToFile(Reactive.defaultBuildPath, String.valueOf(LocalTime.now().getSecond()));
+    }
+
+    public static void generateToFile(String buildPath, String discriminator) {
+        Reactive.generate(Data.class, "app/" + buildPath, discriminator);
+    }
+}
 ```
 
 ## Summary 

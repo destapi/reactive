@@ -1,14 +1,12 @@
 package com.akilisha.reactive;
 
 import java.io.IOException;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MakeObservable {
+public class RunObservable {
 
     public static void main(String[] args) throws IOException {
-        // generateToFile();
         generateRuntime();
     }
 
@@ -21,12 +19,6 @@ public class MakeObservable {
             list.add(newData);
         }
         list.forEach(a -> System.out.printf("Is %s verified? %s", a.getName(), a.isVerified()));
-    }
-
-    public static void generateToFile() throws IOException {
-        Class<?> clazz = Data.class;
-        Observatory obs = new Observatory(clazz, String.valueOf(LocalTime.now().getSecond()));
-        WriteBytes.toFile(obs.cw.toByteArray(), obs.baseClassInternal);
     }
 
     public static Observable watch = new Observable() {

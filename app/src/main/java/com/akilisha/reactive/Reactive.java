@@ -1,13 +1,18 @@
 package com.akilisha.reactive;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.nio.file.Paths;
 import java.lang.invoke.MethodHandles.Lookup;
 
 public class Reactive extends ClassLoader {
 
     public static String suffix = "0";
+    public static String defaultBuildPath = "build/classes/java/main";
     public static Reactive loader = new Reactive();
     public static Lookup lookup = MethodHandles.publicLookup();
 
@@ -40,6 +45,24 @@ public class Reactive extends ClassLoader {
             return (T) data;
         } catch (Throwable e) {
             throw new RuntimeException("Problem generating new class " + decoratedClass, e);
+        }
+    }
+
+    public static void generate(Class<?> target, String buildPath, String discriminator) {
+        String filePath = String.format("%s%s%s", target.getName(), suffix, discriminator).replace(".", "/");
+        File file = Paths.get(System.getProperty("user.dir"), String.format("%s/%s.class", buildPath, filePath)).toFile();
+        try {
+            Observatory obs = new Observatory(target, suffix);
+            byte[] bytes = obs.cw.toByteArray();
+            file.createNewFile();
+            // try with resources
+            try (FileOutputStream stream = new FileOutputStream(file)) {
+                stream.write(bytes);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
