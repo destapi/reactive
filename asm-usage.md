@@ -7,3 +7,9 @@ set CLASSPATH=app\build\classes\java\main;app\build\classes\java\test;%ASM_JAR%;
 
 java -cp %CLASSPATH% org.objectweb.asm.util.ASMifier com.akilisha.reactive.Data0
 ```
+
+## Publishing to local maven repo
+
+```bash
+gradle publishMavenPublicationToMavenLocal
+```
