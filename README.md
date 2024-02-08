@@ -106,6 +106,6 @@ Is Stephano_2 verified? true
 
 ## Summary 
 
-This idea and potential of the Observable utility can be extrapolated further and used to generate data events which would form a data stream resulting data changing in observed instances.
+This idea of the Observable utility can be extrapolated further and used for example, to generate data events, which would effectively create a data stream emanating from data changing in the observed instances.
 
 The sky is truly the limit in what one can do!
