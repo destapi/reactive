@@ -126,7 +126,7 @@ public class GenObserver {
 This idea of the Observer utility can be extrapolated further and used for example, to generate data events, which would effectively create a data stream emanating from data changing in the observed instances. This can be illustrated easily using RXjava's Observable object.
 
 ```java 
-class SomeEventGenerator {
+class SomeEventPipeline {
 
     Observer watch;
 
@@ -165,21 +165,24 @@ Once the __RXjava__ Observable has been set up, the __Observer__ can then be pas
 public class DataSimulate {
 
     public static void main(String[] args) throws IOException {
-        // some data source somewhere
-        SomeEventGenerator gen = new SomeEventGenerator();
+        // something in the application which produces events
+        SomeEventPipeline gen = new SomeEventPipeline();
+
+        // subscribing to the event source
         gen.getObservable().subscribe(next -> {
             System.out.println("Event generated: " + next);
         });
 
-        // decorated data object
+        // creating an observable data object
         Data data = Reactive.observe(Data.class, gen.getObserver());
 
-        // simulated data changes
+        // Updating values in data object will generate events in the pipeline
+        // keyboard input is used to make the illustration here, but the data changes could be as a result of many other diffrent reasons
         try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
             String line = null;
             while ((line = br.readLine()) != null) {
-                data.setName(line);     // updating
-                data.getName();         // acessing
+                data.setName(line);         // updating data value
+                data.getName();             // accessing data value
             }
         }
     }
