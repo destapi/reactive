@@ -8,12 +8,13 @@ import java.util.List;
 public class MakeObservable {
 
     public static void main(String[] args) throws IOException {
-        generateToFile();
+        // generateToFile();
+        generateRuntime();
     }
 
     public static void generateRuntime() throws IOException {
         List<Data> list = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 3; i++) {
             Data newData = Reactive.observe(Data.class, watch);
             newData.setName("Stephano_" + i);
             newData.setVerified(true);
