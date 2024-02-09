@@ -1,6 +1,6 @@
 # Building up on the knowledge
 
-Bootstrap a barebones server, with just a tcp connector and a resource handler
+Bootstrap a barebone server, with just a tcp connector and a resource handler
 
 ```java
 public static Server createServer(int port) {
@@ -16,7 +16,7 @@ public static Server createServer(int port) {
 }
 ```
 
-Create a barebones servlet
+Create a barebone servlet
 
 ```java
 public class SessionDemo extends HttpServlet {
@@ -67,8 +67,8 @@ curl http://localhost:9080/sess
 success
 ```
 
-At this point, the _sessionDir_ should be empty, since we are not using any session. Configuring the session handler is
-next
+At this point, the _sessionDir_ should be empty, since we are not using any session.
+The next step will be to configure the session handler.
 
 Configure a session id manager
 
@@ -122,7 +122,7 @@ Configure a data store factory
 }
 ```
 
-Pull together all the SessionHandler plumbing in one function
+Pull together all the _SessionHandler_ plumbing in one function
 
 ```java
 public static SessionHandler configureSessionHandler(Server server, File dir) throws Exception {
@@ -139,7 +139,7 @@ public static SessionHandler configureSessionHandler(Server server, File dir) th
 }
 ```
 
-Update the _Main_ file to reel in the _SessionHandler_ and add to the _ServletContextHandler_
+Update the _Main_ file to reel in a _SessionHandler_ and add it to the _ServletContextHandler_
 
 ```java
 public static void main(String[] args) throws Exception {
@@ -161,7 +161,7 @@ public static void main(String[] args) throws Exception {
 }
 ```
 
-Update the servlet to take advantage of session hamdling
+Update the servlet to take advantage of session handling
 
 ```java
 public class SessionDemo extends HttpServlet {
@@ -185,7 +185,7 @@ public class SessionDemo extends HttpServlet {
 }
 ```
 
-Restart the server abd fire up a _curl_ request again
+Restart the server and fire up a _curl_ request again
 
 ```bash
 curl http://localhost:9080/sess
@@ -194,14 +194,15 @@ curl http://localhost:9080/sess
 Preferences(color=red, size=XL, brand=volvo)
 ```
 
-Pass color in the query string to see the response change
+The response now contains the user preference configured by default.
+Now, pass color in the query string to see the response changing
 
 ```bash
 curl http://localhost:9080/sess?color=green
 Preferences(color=green, size=XL, brand=volvo)
 ```
 
-The configured _sessionDir_ folder now also has some files
+The configured _sessionDir_ folder should now also contain some files
 
 ![img.png](www/img/img.png)
 
