@@ -1,0 +1,43 @@
+{
+  "name": {
+    "first": "jessi",
+    "last": "maish"
+  },
+  "joined": "2014-01-02",
+  "luckyNums": [
+    1.0,
+    2.8
+  ],
+  "phones": [
+    {
+      "type": "CELL",
+      "number": {
+        "area": "445",
+        "local": "455-6655"
+      }
+    },
+    {
+      "type": "HOME",
+      "number": {
+        "area": "334",
+        "local": "566-2233"
+      }
+    }
+  ],
+  "hobbies": [
+    {
+      "name": "sky diving",
+      "rating": 10
+    },
+    {
+      "name": "meditating",
+      "rating": 2
+    }
+  ],
+  "todos": {
+    "1": {
+      "title": "read book",
+      "done": false
+    }
+  }
+}

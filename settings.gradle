@@ -11,4 +11,7 @@ plugins {
 }
 
 rootProject.name = 'reactive'
-include('app')
+include 'data'
+include 'json'
+include 'webzy'
+
