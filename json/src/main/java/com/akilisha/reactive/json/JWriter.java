@@ -5,13 +5,17 @@ import jakarta.json.stream.JsonGenerator;
 import jakarta.json.stream.JsonGeneratorFactory;
 
 import java.io.StringWriter;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 
 public class JWriter {
 
-    public static final JsonGeneratorFactory factory = Json.createGeneratorFactory(Collections.emptyMap());
+    public static final JsonGeneratorFactory factory = Json.createGeneratorFactory(
+            //note that supported options are provider-specific except pretty printing
+            Map.of(JsonGenerator.PRETTY_PRINTING, "\t")
+    );
 
     public String generate(Object node) {
         StringWriter rt = new StringWriter();
@@ -34,7 +38,7 @@ public class JWriter {
                 if (JNode.class.isAssignableFrom(value.getClass())) {
                     generate(generator, value, key);
                 } else {
-                    generator.write(key, value.toString());
+                    resolveAndWrite(generator, key, value);
                 }
             }
             generator.writeEnd();
@@ -51,6 +55,26 @@ public class JWriter {
                 }
             }
             generator.writeEnd();
+        }
+    }
+
+    private void resolveAndWrite(JsonGenerator generator, String key, Object value) {
+        if (int.class.isAssignableFrom(value.getClass())) {
+            generator.write(key, (int) value);
+        } else if (long.class.isAssignableFrom(value.getClass())) {
+            generator.write(key, (long) value);
+        } else if (double.class.isAssignableFrom(value.getClass())) {
+            generator.write(key, (double) value);
+        } else if (BigInteger.class.isAssignableFrom(value.getClass())) {
+            generator.write(key, (BigInteger) value);
+        } else if (BigDecimal.class.isAssignableFrom(value.getClass())) {
+            generator.write(key, (BigDecimal) value);
+        } else if (boolean.class.isAssignableFrom(value.getClass())) {
+            generator.write(key, (boolean) value);
+        } else if (String.class.isAssignableFrom(value.getClass())) {
+            generator.write(key, (String) value);
+        } else {
+            System.out.printf("'%s' type is not yet handled", value.getClass());
         }
     }
 }

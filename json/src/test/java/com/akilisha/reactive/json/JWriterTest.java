@@ -30,6 +30,6 @@ class JWriterTest {
         String json = new JWriter().generate(node);
         System.out.println(json);
         JNode node2 = JReader.fromJson(new StringReader(json));
-        assertThat(node.size()).isEqualTo(node2.size());
+        assertThat(node).isEqualTo(node2);
     }
 }
