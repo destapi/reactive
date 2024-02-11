@@ -1,18 +1,15 @@
 package com.akilisha.reactive.json;
 
-import jakarta.json.Json;
-import jakarta.json.stream.JsonGenerator;
-import jakarta.json.stream.JsonGeneratorFactory;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.Collections;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class JWriterTest {
 
-    JsonGeneratorFactory factory = Json.createGeneratorFactory(Collections.emptyMap());
+
     String sample = "{\n" +
             "   \"firstName\": \"John\", \"lastName\": \"Smith\", \"age\": 25,\n" +
             "   \"address\" : {\n" +
@@ -30,10 +27,9 @@ class JWriterTest {
     @Test
     void verify_generated_json_matched_sample_json() throws IOException {
         JNode node = JReader.fromJson(new StringReader(sample));
-        StringWriter rt = new StringWriter();
-        JsonGenerator generator = factory.createGenerator(rt);
-        new JWriter().generate(generator, node, null);
-        generator.close();
-        System.out.println(rt);
+        String json = new JWriter().generate(node);
+        System.out.println(json);
+        JNode node2 = JReader.fromJson(new StringReader(json));
+        assertThat(node.size()).isEqualTo(node2.size());
     }
 }

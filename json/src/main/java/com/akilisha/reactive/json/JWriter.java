@@ -1,11 +1,25 @@
 package com.akilisha.reactive.json;
 
+import jakarta.json.Json;
 import jakarta.json.stream.JsonGenerator;
+import jakarta.json.stream.JsonGeneratorFactory;
 
+import java.io.StringWriter;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 public class JWriter {
+
+    public static final JsonGeneratorFactory factory = Json.createGeneratorFactory(Collections.emptyMap());
+
+    public String generate(Object node) {
+        StringWriter rt = new StringWriter();
+        JsonGenerator generator = factory.createGenerator(rt);
+        generate(generator, node, null);
+        generator.close();
+        return rt.toString();
+    }
 
     public void generate(JsonGenerator generator, Object node, String name) {
         if (((JNode) node).isObject()) {

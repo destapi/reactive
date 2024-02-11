@@ -510,7 +510,8 @@ public static ServletContextHandler configureWebsocket(Server server, String ctx
 }
 ```
 
-The illustration here is a simple generic Websocket endpoint, which as an exercise, you can extend to do the same thing and the
+The illustration here is a simple generic Websocket endpoint, which as an exercise, you can extend to do the same thing
+and the
 EventsServlet
 
 ```java
