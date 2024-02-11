@@ -1,16 +1,22 @@
 package com.akilisha.reactive.webzy;
 
+import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
 import org.eclipse.jetty.http.HttpCookie;
+import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.server.*;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.session.*;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.resource.Resource;
+import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 public class Main {
 
@@ -19,8 +25,16 @@ public class Main {
         HttpConfiguration httpConfig = new HttpConfiguration();
         httpConfig.setSendServerVersion(false);
         HttpConnectionFactory http11 = new HttpConnectionFactory(httpConfig);
-        try (ServerConnector connector = new ServerConnector(server, http11)) {
+        // The ConnectionFactory for clear-text HTTP/2.
+        HTTP2CServerConnectionFactory h2c = new HTTP2CServerConnectionFactory(httpConfig);
+        // The ALPN ConnectionFactory.
+        ALPNServerConnectionFactory alpn = new ALPNServerConnectionFactory();
+        // The default protocol to use in case there is no negotiation.
+        alpn.setDefaultProtocol(http11.getProtocol());
+
+        try (ServerConnector connector = new ServerConnector(server, http11, h2c, alpn)) {
             connector.setPort(port);
+            connector.setIdleTimeout(TimeUnit.HOURS.toMillis(1));
             server.setConnectors(new Connector[]{connector});
         }
         return server;
@@ -79,6 +93,33 @@ public class Main {
         return sessionHandler;
     }
 
+    public static ServletContextHandler configureEventsSource(Server server, String ctx) {
+        ServletContextHandler context = new ServletContextHandler(server, ctx);
+
+        //add new data events listener
+        ServletHolder dataEventsHolder = new ServletHolder();
+        dataEventsHolder.setServlet(new EventsServlet(new DataEvents()));
+        dataEventsHolder.setInitOrder(0);
+        dataEventsHolder.setAsyncSupported(true);
+        context.addServlet(dataEventsHolder, "/*");
+        return context;
+    }
+
+    public static ServletContextHandler configureWebsocket(Server server, String ctx, Supplier<Object> endpoint) {
+        ServletContextHandler context = new ServletContextHandler(server, ctx);
+
+        JettyWebSocketServletContainerInitializer.configure(context, (servletContext, wsContainer) -> {
+            // Configure default max size
+            wsContainer.setMaxTextMessageSize(128 * 1024);
+            // Add websockets
+            wsContainer.addMapping("/*", (upgradeRequest, upgradeResponse) -> {
+                upgradeResponse.setAcceptedSubProtocol("protocolOne");
+                return endpoint.get();
+            });
+        });
+        return context;
+    }
+
     public static void main(String[] args) throws Exception {
         int port = 9080;
         String resourceRoot = "C:\\Projects\\java\\reactive\\webzy\\www";
@@ -94,32 +135,27 @@ public class Main {
         context.setBaseResource(Resource.newResource(resourceRoot));
         context.setWelcomeFiles(new String[]{"index.html"});
 
-        // add and configure proxy filter
-//        FilterHolder filterHolder = context.addFilter(TryFilesFilter.class, "/*", EnumSet.of(DispatcherType.REQUEST));
-//        // Configure the filter.
-//        filterHolder.setInitParameter("files", "$path /index.php?p=$path");
-//        filterHolder.setAsyncSupported(true);
+        // configure servlet for playing with session
+        ServletHolder sessionHolder = context.addServlet(SessionDemo.class, "/data");
+        sessionHolder.setInitParameter("sessionDir", sessionDir.toString());
+
+        //configure websocket
+        ServletContextHandler wsContext = configureWebsocket(server, "/events", EventsEndpoint::new);
+
+        //configure event source
+        ServletContextHandler sseContext = configureEventsSource(server, "/sse");
 
         // add and configure default servlet
         ServletHolder defaultHolder = context.addServlet(DefaultServlet.class, "/");
         defaultHolder.setInitParameter("dirAllowed", "false");
         defaultHolder.setInitParameter("gzip", "true");
 
-        ServletHolder sessionHolder = context.addServlet(SessionDemo.class, "/sess");
-        sessionHolder.setInitParameter("sessionDir", sessionDir.toString());
-
-        // add and configure fastcgi servlet
-//        ServletHolder cgiHolder = context.addServlet(FastCGIProxyServlet.class, "*.php");
-//        cgiHolder.setInitParameter("proxyTo", "http://localhost:9000");
-//        cgiHolder.setInitParameter("prefix", "/");
-//        // cgiHolder.setInitParameter("scriptRoot", Paths.get(resourceRoot, "wordpress").toString());
-//        cgiHolder.setInitParameter("scriptRoot", resourceRoot);
-//        cgiHolder.setInitParameter("scriptPattern", "(.+?\\.php)");
-//        cgiHolder.setInitOrder(1);
-//        cgiHolder.setAsyncSupported(true);
-
         // start server
-        server.setHandler(context);
+        ContextHandlerCollection contexts = new ContextHandlerCollection();
+        contexts.addHandler(context);
+        contexts.addHandler(wsContext);
+        contexts.addHandler(sseContext);
+        server.setHandler(contexts);
         server.start();
     }
 }

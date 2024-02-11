@@ -1,0 +1,18 @@
+#list {
+    border: 1px solid #333;
+    font-size: 1.3em;
+    max-width: 500px;
+    text-decoration: none;
+}
+
+#list li {
+    padding: 3px;
+}
+
+.hidden {
+    display: none;
+}
+
+#events-data {
+    background: #eee;
+}

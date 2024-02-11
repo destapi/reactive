@@ -1,8 +1,9 @@
 package com.akilisha.reactive.json;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public interface JNode {
+public interface JNode extends Serializable {
 
     default boolean isArray() {
         return false;

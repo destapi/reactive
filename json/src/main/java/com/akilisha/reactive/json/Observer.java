@@ -25,4 +25,7 @@ public interface Observer {
     // jobject
     default void delete(Object target, String path, String key, Object value) {
     }
+
+    default void write(String event, String data) {
+    }
 }

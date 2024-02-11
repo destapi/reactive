@@ -75,9 +75,4 @@ public class JObject extends LinkedHashMap<String, Object> implements JNode {
         }
         return (E) value;
     }
-
-    @Override
-    public String toString() {
-        return super.toString() + "\npath: " + this.tracePath();
-    }
 }
