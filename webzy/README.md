@@ -475,7 +475,8 @@ And the browser will continue to show the data which you are changing. This data
 
 ![event source data](www/img/events-source-data.png)
 
-Phase 2 looks good, but for completeness, I will illustrate phase 2 using a _WebSocket_ which is really an overkill for this 
+Phase 2 looks good, but for completeness, I will illustrate phase 2 using a _WebSocket_ which is really an overkill for
+this
 illustration example, but someone else might find it useful.
 
 Configure a Websocket handler and attach to the server
@@ -509,9 +510,11 @@ public static ServletContextHandler configureWebsocket(Server server, String ctx
 }
 ```
 
-I will use a generic Websocket endpoint, and as an exercise, you can adapt it to so the same thing ans trhe EventsServlet
+The illustration here is a simple generic Websocket endpoint, which as an exercise, you can extend to do the same thing and the
+EventsServlet
 
 ```java
+
 @Slf4j
 public class EventsEndpoint extends WebSocketAdapter {
 
@@ -636,6 +639,7 @@ function toggleForm(e) {
 And the html requires addition of a form
 
 ```html
+
 <button onclick="toggleForm(this)" type="button">Show WS Form</button>
 
 <form class="hidden" id="data-form">
