@@ -17,15 +17,14 @@
     <li>Data should show up here</li>
 </ul>
 
-<button id="start-ws" onclick="toggleForm()" type="button">Start WS</button>
+<button id="start-ws" onclick="toggleForm(this)" type="button">Show WS Form</button>
 
 <form class="hidden" id="data-form">
     <label>
-        <input name="message"/>
+        <input id="name" name="message"/>
     </label>
-    <input type="button" value="Send"/>
+    <input type="submit" value="Send"/>
 </form>
 
-<div id="events-data"></div>
 </body>
 </html>

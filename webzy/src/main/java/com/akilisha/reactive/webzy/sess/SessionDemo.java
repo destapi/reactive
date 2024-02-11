@@ -1,4 +1,4 @@
-package com.akilisha.reactive.webzy;
+package com.akilisha.reactive.webzy.sess;
 
 import com.akilisha.reactive.json.JNode;
 import com.akilisha.reactive.json.JObject;

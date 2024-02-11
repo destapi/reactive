@@ -94,7 +94,7 @@ Configure a session cache factory
 public static DefaultSessionCacheFactory addDefaultSessionCacheFactory(Server server) {
     // There is one SessionCache per SessionHandler, and thus one per context.
     DefaultSessionCacheFactory cacheFactory = new DefaultSessionCacheFactory();
-    //EVICT_ON_INACTIVE: evict a session after 60sec inactivity
+    //EVICT_ON_INACTIVE: evict a sess after 60sec inactivity
     cacheFactory.setEvictionPolicy(SessionCache.NEVER_EVICT);
     //Only useful with the EVICT_ON_INACTIVE policy
     //cacheFactory.setSaveOnInactiveEvict(true);
@@ -111,7 +111,7 @@ Configure a data store factory
 
 ```java
     public static FileSessionDataStoreFactory addFileSessionCacheFactory(Server server, File dir) {
-    //  There is one SessionDataStore per SessionCache. One file represents one session in one context.
+    //  There is one SessionDataStore per SessionCache. One file represents one sess in one context.
     FileSessionDataStoreFactory storeFactory = new FileSessionDataStoreFactory();
     storeFactory.setStoreDir(dir);
     storeFactory.setGracePeriodSec(3600);
@@ -146,8 +146,8 @@ public static void main(String[] args) throws Exception {
     String resourceRoot = "C:\\Projects\\java\\reactive\\webzy\\www";
     Server server = createServer(port);
 
-    // configure session factories
-    Path sessionDir = Path.of(System.getProperty("user.dir"), "webzy/session");
+    // configure sess factories
+    Path sessionDir = Path.of(System.getProperty("user.dir"), "webzy/sess");
     SessionHandler sessionHandler = configureSessionHandler(server, sessionDir.toFile());
 
     // servlet context
@@ -217,7 +217,7 @@ Preferences(color=green, size=XL, brand=volvo)
 
 The configured _sessionDir_ folder should now also contain some files
 
-![img.png](www/img/session-files.png)
+![saved-session-files](www/img/saved-session-files.png)
 
 Phase 1 looks good, and in the meantime, it will be put on ice. Now moving onto the next phase, which is working on the
 data servlet
@@ -226,7 +226,7 @@ This will make use of _SSE_ (on the server-side with htp2 to
 overcome [http1 pipelining issues](https://en.wikipedia.org/wiki/HTTP_pipelining))
 in conjunction with _EventSource_ (on the client-side) to form a conduit of channeling changes in backend data to the
 frontend without manually
-refetching the data
+fetching the data
 
 ## The backend data store
 
@@ -473,9 +473,182 @@ At this point, restart the server and fire off some _curl requests_.
 
 And the browser will continue to show the data which you are changing. This data could by arbitrary
 
-![img.png](www/img/data-changes.png)
+![event source data](www/img/events-source-data.png)
 
-Phase 2 looks good, but for completion (for the curious), I will illustrate phase 2 using a _WebSocket_ which is really
-an
-overkill for the example, but someone else might find it useful.
+Phase 2 looks good, but for completeness, I will illustrate phase 2 using a _WebSocket_ which is really an overkill for this 
+illustration example, but someone else might find it useful.
+
+Configure a Websocket handler and attach to the server
+
+```java
+public static ServletContextHandler configureWebsocket(Server server, String ctx, Function<String, Object> endpoint) {
+    ServletContextHandler context = new ServletContextHandler(server, ctx);
+
+    JettyWebSocketServletContainerInitializer.configure(context, (servletContext, container) -> {
+        // Configure default max size
+        container.setMaxTextMessageSize(128 * 1024);
+        container.setIdleTimeout(Duration.ofMinutes(2));    // this allows you to estimate a ping interval of say 90 seconds on the client side
+        // Add websockets
+        container.addMapping("^/ws/(.+)$", (upgradeRequest, upgradeResponse) -> {
+            upgradeResponse.setAcceptedSubProtocol("protocolOne");
+
+            // Retrieve the Regex template (other templates are ServletPathSpec and UriTemplatePathSpec).
+            RegexPathSpec pathSpec = (RegexPathSpec) upgradeRequest.getServletAttribute(PathSpec.class.getName());
+
+            // Match the URI template.
+            Matcher matcher = pathSpec.getPattern().matcher(upgradeRequest.getRequestPath());
+            String id = "0";
+            if (matcher.find()) {
+                id = matcher.group(1);
+            }
+
+            return endpoint.apply(id);
+        });
+    });
+    return context;
+}
+```
+
+I will use a generic Websocket endpoint, and as an exercise, you can adapt it to so the same thing ans trhe EventsServlet
+
+```java
+@Slf4j
+public class EventsEndpoint extends WebSocketAdapter {
+
+    final String id;
+
+    public EventsEndpoint(String id) {
+        this.id = id;
+    }
+
+    @Override
+    public void onWebSocketConnect(Session sess) {
+        super.onWebSocketConnect(sess);
+        log.debug("Endpoint connected: {}", sess);
+        try {
+            sess.getRemote().sendString("you are now connected");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void onWebSocketText(String message) {
+        super.onWebSocketText(message);
+        log.debug("Received TEXT message: {}", message);
+
+        if (message.toLowerCase(Locale.US).contains("bye")) {
+            getSession().close(StatusCode.NORMAL, "Thanks");
+        } else {
+            //echo back a capitalized message
+            try {
+                getSession().getRemote().sendString(message.toUpperCase());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @Override
+    public void onWebSocketClose(int statusCode, String reason) {
+        super.onWebSocketClose(statusCode, reason);
+        log.debug("Socket Closed: [{}] {}", statusCode, reason);
+    }
+
+    @Override
+    public void onWebSocketError(Throwable cause) {
+        super.onWebSocketError(cause);
+        cause.printStackTrace(System.err);
+    }
+}
+```
+
+Add to the server
+
+```bash
+//configure websocket
+ServletContextHandler wsContext = configureWebsocket(server, "/events", EventsEndpoint::new);
+
+// start server
+ContextHandlerCollection contexts = new ContextHandlerCollection();
+contexts.addHandler(context);
+contexts.addHandler(wsContext);
+contexts.addHandler(sseContext);
+server.setHandler(contexts);
+server.start();
+```
+
+The backend needs to be complemented with some work on the frontend, so complete the data pipeline
+
+```js
+startWebSocket();
+
+function startWebSocket() {
+    // Create a WebSocket connection.
+    const socket = new WebSocket("ws://localhost:9080/events/ws/10", "protocolOne");
+    const ping_interval = 90 * 1000; // it's in milliseconds, which equals to 2 minutes
+    let interval;
+
+    // Connection opened
+    socket.addEventListener("open", (event) => {
+        socket.send(JSON.stringify({message: "Hello Server!"}));
+        const ping = JSON.stringify({"ping": 1});
+
+        interval = setInterval(() => {
+            socket.send(ping);
+        }, ping_interval);
+
+        //attach submit listener for form
+        document.querySelector("#data-form").addEventListener('submit', e => {
+            e.preventDefault();
+            socket.send(JSON.stringify({"message": e.currentTarget.name.value}));
+            e.currentTarget.name.value = "";
+        });
+    });
+
+    // Listen for messages
+    socket.addEventListener("message", (event) => {
+        console.log("Message from server ", event.data);
+        addMessageLine(event)
+    });
+
+    socket.addEventListener("error", (event) => {
+        console.log("error occurred with the socket ", event)
+        addMessageLine(event)
+    });
+
+    socket.addEventListener("close", (event) => {
+        console.log("socket has been closed by the server ", event)
+        addMessageLine(event)
+
+        // dispose interval
+        clearInterval(interval);
+    });
+}
+
+function toggleForm(e) {
+    document.getElementById("data-form").classList.toggle('hidden')
+    let text = e.innerHTML;
+    e.innerHTML = text.startsWith("Show") ? "Hide WS Form" : "Show WS Form";
+}
+```
+
+And the html requires addition of a form
+
+```html
+<button onclick="toggleForm(this)" type="button">Show WS Form</button>
+
+<form class="hidden" id="data-form">
+    <label>
+        <input id="name" name="message"/>
+    </label>
+    <input type="submit" value="Send"/>
+</form>
+```
+
+And the list of messages will continue to populate with messages coming from the server
+
+![websocket data](www/img/websocket-data.png)
+
+## Saving the session in a database
 

@@ -1,7 +1,12 @@
 package com.akilisha.reactive.webzy;
 
+import com.akilisha.reactive.webzy.sess.SessionDemo;
+import com.akilisha.reactive.webzy.sse.EventsServlet;
+import com.akilisha.reactive.webzy.ws.EventsEndpoint;
 import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
 import org.eclipse.jetty.http.HttpCookie;
+import org.eclipse.jetty.http.pathmap.PathSpec;
+import org.eclipse.jetty.http.pathmap.RegexPathSpec;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
@@ -14,9 +19,11 @@ import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerI
 
 import java.io.File;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
+import java.util.function.Function;
+import java.util.regex.Matcher;
 
 public class Main {
 
@@ -58,7 +65,7 @@ public class Main {
     public static DefaultSessionCacheFactory addDefaultSessionCacheFactory(Server server) {
         // There is one SessionCache per SessionHandler, and thus one per context.
         DefaultSessionCacheFactory cacheFactory = new DefaultSessionCacheFactory();
-        //EVICT_ON_INACTIVE: evict a session after 60sec inactivity
+        //EVICT_ON_INACTIVE: evict a sess after 60sec inactivity
         cacheFactory.setEvictionPolicy(SessionCache.NEVER_EVICT);
         //Only useful with the EVICT_ON_INACTIVE policy
         //cacheFactory.setSaveOnInactiveEvict(true);
@@ -71,7 +78,7 @@ public class Main {
     }
 
     public static FileSessionDataStoreFactory addFileSessionCacheFactory(Server server, File dir) {
-        //  There is one SessionDataStore per SessionCache. One file represents one session in one context.
+        //  There is one SessionDataStore per SessionCache. One file represents one sess in one context.
         FileSessionDataStoreFactory storeFactory = new FileSessionDataStoreFactory();
         storeFactory.setStoreDir(dir);
         storeFactory.setGracePeriodSec(3600);
@@ -105,16 +112,28 @@ public class Main {
         return context;
     }
 
-    public static ServletContextHandler configureWebsocket(Server server, String ctx, Supplier<Object> endpoint) {
+    public static ServletContextHandler configureWebsocket(Server server, String ctx, Function<String, Object> endpoint) {
         ServletContextHandler context = new ServletContextHandler(server, ctx);
 
-        JettyWebSocketServletContainerInitializer.configure(context, (servletContext, wsContainer) -> {
+        JettyWebSocketServletContainerInitializer.configure(context, (servletContext, container) -> {
             // Configure default max size
-            wsContainer.setMaxTextMessageSize(128 * 1024);
+            container.setMaxTextMessageSize(128 * 1024);
+            container.setIdleTimeout(Duration.ofMinutes(2));    // this allows you to estimate a ping interval of say 90 seconds on the client side
             // Add websockets
-            wsContainer.addMapping("/*", (upgradeRequest, upgradeResponse) -> {
+            container.addMapping("^/ws/(.+)$", (upgradeRequest, upgradeResponse) -> {
                 upgradeResponse.setAcceptedSubProtocol("protocolOne");
-                return endpoint.get();
+
+                // Retrieve the Regex template (other templates are ServletPathSpec and UriTemplatePathSpec).
+                RegexPathSpec pathSpec = (RegexPathSpec) upgradeRequest.getServletAttribute(PathSpec.class.getName());
+
+                // Match the URI template.
+                Matcher matcher = pathSpec.getPattern().matcher(upgradeRequest.getRequestPath());
+                String id = "0";
+                if (matcher.find()) {
+                    id = matcher.group(1);
+                }
+
+                return endpoint.apply(id);
             });
         });
         return context;
@@ -125,8 +144,8 @@ public class Main {
         String resourceRoot = "C:\\Projects\\java\\reactive\\webzy\\www";
         Server server = createServer(port);
 
-        // configure session factories
-        Path sessionDir = Path.of(System.getProperty("user.dir"), "webzy/session");
+        // configure sess factories
+        Path sessionDir = Path.of(System.getProperty("user.dir"), "webzy/sess");
         SessionHandler sessionHandler = configureSessionHandler(server, sessionDir.toFile());
 
         // servlet context
@@ -135,7 +154,7 @@ public class Main {
         context.setBaseResource(Resource.newResource(resourceRoot));
         context.setWelcomeFiles(new String[]{"index.html"});
 
-        // configure servlet for playing with session
+        // configure servlet for playing with sess
         ServletHolder sessionHolder = context.addServlet(SessionDemo.class, "/data");
         sessionHolder.setInitParameter("sessionDir", sessionDir.toString());
 

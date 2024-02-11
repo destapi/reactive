@@ -1,22 +1,31 @@
-package com.akilisha.reactive.webzy;
+package com.akilisha.reactive.webzy.ws;
 
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.StatusCode;
 import org.eclipse.jetty.websocket.api.WebSocketAdapter;
 
+import java.io.IOException;
 import java.util.Locale;
-import java.util.concurrent.CountDownLatch;
 
 @Slf4j
 public class EventsEndpoint extends WebSocketAdapter {
 
-    private final CountDownLatch closureLatch = new CountDownLatch(1);
+    final String id;
+
+    public EventsEndpoint(String id) {
+        this.id = id;
+    }
 
     @Override
     public void onWebSocketConnect(Session sess) {
         super.onWebSocketConnect(sess);
         log.debug("Endpoint connected: {}", sess);
+        try {
+            sess.getRemote().sendString("you are now connected");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -26,6 +35,13 @@ public class EventsEndpoint extends WebSocketAdapter {
 
         if (message.toLowerCase(Locale.US).contains("bye")) {
             getSession().close(StatusCode.NORMAL, "Thanks");
+        } else {
+            //echo back a capitalized message
+            try {
+                getSession().getRemote().sendString(message.toUpperCase());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -33,17 +49,11 @@ public class EventsEndpoint extends WebSocketAdapter {
     public void onWebSocketClose(int statusCode, String reason) {
         super.onWebSocketClose(statusCode, reason);
         log.debug("Socket Closed: [{}] {}", statusCode, reason);
-        closureLatch.countDown();
     }
 
     @Override
     public void onWebSocketError(Throwable cause) {
         super.onWebSocketError(cause);
         cause.printStackTrace(System.err);
-    }
-
-    public void awaitClosure() throws InterruptedException {
-        log.debug("Awaiting closure from remote");
-        closureLatch.await();
     }
 }
