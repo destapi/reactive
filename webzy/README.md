@@ -1,5 +1,7 @@
 # Building on the existing knowledge
 
+## Phase 1
+
 Bootstrap a barebone server, with just a tcp connector and a resource handler
 
 ```java
@@ -218,6 +220,8 @@ Preferences(color=green, size=XL, brand=volvo)
 The configured _sessionDir_ folder should now also contain some files
 
 ![saved-session-files](www/img/saved-session-files.png)
+
+## Phase 2
 
 Phase 1 looks good, and in the meantime, it will be put on ice. Now moving onto the next phase, which is working on the
 data servlet
@@ -475,6 +479,8 @@ And the browser will continue to show the data which you are changing. This data
 
 ![event source data](www/img/events-source-data.png)
 
+## Phase 3
+
 Phase 2 looks good, but for completeness, I will illustrate phase 2 using a _WebSocket_ which is really an overkill for
 this
 illustration example, but someone else might find it useful.
@@ -655,5 +661,212 @@ And the list of messages will continue to populate with messages coming from the
 
 ![websocket data](www/img/websocket-data.png)
 
-## Saving the session in a database
+## phase 4 - Saving the session in a database
+
+Using H2 DB
+
+To create a database, start H2's Shell tool and create the database file. To do this, navigate to the _bin_ directory of
+your __H2__ installation folder, and follow the prompts. Below is an example for illustration
+
+```bash
+java -cp h2-2.1.212.jar org.h2.tools.Shell
+
+Welcome to H2 Shell 2.1.212 (2022-04-09)
+Exit with Ctrl+C
+[Enter]   jdbc:h2:tcp://localhost/~/.data/todos-db
+URL       jdbc:h2:file:~/.data/h2/jdbc-session
+[Enter]   org.h2.Driver
+Driver
+[Enter]   sa
+User
+Password  Password  >>><
+Type the same password again to confirm database creation.
+Password  Password  >>><
+Connected
+Commands are case insensitive; SQL statements end with ';'
+help or ?      Display this help
+list           Toggle result list / stack trace mode
+maxwidth       Set maximum column width (default is 100)
+autocommit     Enable or disable autocommit
+history        Show the last 20 statements
+quit or exit   Close the connection and exit
+
+sql> exit
+Connection closed
+```
+
+You should now be able to accses this database using any tool/editor of your choice.
+
+Configure a jdbc data factory
+
+```java
+public static JDBCSessionDataStoreFactory addJdbcDataStoreFactory(String driver, String url) {
+    DatabaseAdaptor databaseAdaptor = new DatabaseAdaptor();
+    databaseAdaptor.setDriverInfo(driver, url);
+    // databaseAdaptor.setDatasource(myDataSource); // you can set data source here (for connection pooling, etc)
+    JDBCSessionDataStoreFactory jdbcSessionDataStoreFactory = new JDBCSessionDataStoreFactory();
+    jdbcSessionDataStoreFactory.setDatabaseAdaptor(databaseAdaptor);
+    return jdbcSessionDataStoreFactory;
+}
+```
+
+Proceed to create a jdbc session handler
+
+```java
+public static SessionHandler configureJdbcSessionHandler(Server server, String driver, String url) throws Exception {
+    SessionHandler sessionHandler = new SessionHandler();
+    // default config
+    sessionHandler.setHttpOnly(true);
+    sessionHandler.setSecureRequestOnly(true);
+    sessionHandler.setSameSite(HttpCookie.SameSite.STRICT);
+    // custom config
+    sessionHandler.setSessionIdManager(configureSessionIdManager(server));
+    sessionHandler.setSessionCache(addDefaultSessionCacheFactory(server).newSessionCache(sessionHandler));
+    sessionHandler.getSessionCache().setSessionDataStore(addJdbcDataStoreFactory(driver, url).getSessionDataStore(sessionHandler));
+    return sessionHandler;
+}
+```
+
+Wire this new session handler to the server instead
+
+```bash
+// configure jdbc data session handler
+String driver = "org.h2.Driver";
+// use a better method for passing credentials. The usage below should only be used in scenarios like testing
+String url = "jdbc:h2:file:~/.data/h2/jdbc-session;USER=sa;PASSWORD=password";
+SessionHandler jdbcDataSessionHandler = configureJdbcSessionHandler(server, driver, url);
+
+// servlet context
+ServletContextHandler context = new ServletContextHandler(server, "/");
+//        context.setSessionHandler(fileDataSessionHandler);
+context.setSessionHandler(jdbcDataSessionHandler);
+```
+
+If you prefer, you can start an instance of H2 Db, and access the database through a TCP connection instead of locking
+the
+files up through direct access.
+
+```bash
+# view options available to start the server
+java -cp h2-2.1.212.jar org.h2.tools.Server -?
+
+# start the server using minimum options (this will bring up the console view in the browser)
+java -cp h2-2.1.212.jar org.h2.tools.Server
+
+# change the access usl to use tcp instead of file
+String url = "jdbc:h2:tcp://localhost/~/.data/h2/jdbc-session;USER=sa;PASSWORD=password";
+```
+
+![H2 DB browser console](www/img/h2-db-console.png)
+
+Fire up the server, and make a curl request to any endpoint using a session
+
+```bash
+curl "http://localhost:9080/data?color=red&make=mazda&trim=XL"
+
+# output
+{color=red, make=mazda, trim=XL}
+```
+
+Now check the database for a new entry
+
+![jdbc-session table entry](www/img/jdbc-session-entry.png)
+
+Open a browser tab on the data endpoint
+
+![empty session data](www/img/empty_session_data.png)
+
+Send a query string with key-value pairs
+
+![new session data values](www/img/new_session_data_values.png)
+
+Restarting the server and accessing the data endpoint should return the object already in session
+
+![data from last session](www/img/data_from_last_session.png)
+
+Updating the session data will add new fields or update existing fields
+
+![iadd or update data fields](www/img/add_or_update_fields.png)
+
+And that brings us to the end of this phase where there is session data that can be updated, and which is saved in a
+database.
+
+## Phase 5—Change data capture
+
+At this point, it should be practical to start asking questions like:
+
+- Is it possible to share session data between two users?
+- Is it possible to transmit changes to this data to all the parties who share it?
+
+The first step would be to take advantage of change data capture _(cdc)_ tools that are in existence, and to also use a
+database which lends itself easily to change data capture.
+Postgres is a good candidate because of its write-ahead transaction log architecture, which allows a connector to
+produce a change event for every row-level insert, update, and delete operation that was captured.
+
+To make things easier, I'll use docker to run Postgres without having to install it on the development machine. This
+docker instance needs to be configured for cdc.
+
+```bash
+docker run -d ^
+	--name jdbc-sessions-postgres ^
+	-e POSTGRES_PASSWORD=postgres ^
+	-e PGDATA=/var/lib/postgresql/data/pgdata ^
+	-v C:\\Users\\maina\\.data\\cdc:/var/lib/postgresql/data ^
+	-p 5432:5432 ^
+	postgres:14-bullseye
+```
+
+Set up a dedicated user for use with cdc. To provide a user with replication permissions, define a PostgreSQL role that
+has at least the REPLICATION and LOGIN permissions,
+and then grant that role to the created user.
+
+```bash
+docker exec -it e74053299f57 bash
+root@e74053299f57:/# psql -U postgres
+psql (14.10 (Debian 14.10-1.pgdg110+1))
+Type "help" for help.
+
+postgres=# \d
+Did not find any relations.
+postgres=# create table jdbcsessions;
+postgres=# \c jdbcsessions;
+You are now connected to database "jdbcsessions" as user "postgres".
+postgres=# CREATE USER replicator WITH REPLICATION LOGIN PASSWORD 'postgres';
+CREATE ROLE
+postgres=# CREATE DATABASE jdbcsessions;
+CREATE
+```
+
+One the jdbc session table _(jettysessions)_ has been created, you will need to go back to postgres and grant the
+_replicator_ user
+permissions on that table
+
+```bash
+postgres=# \c jdbcsessions
+You are now connected to database "jdbcsessions" as user "postgres".
+jdbcsessions=# grant all on jettysessions to replicator;
+GRANT
+exit
+```
+
+Client authentication is controlled by a configuration file, which traditionally is named __pg_hba.conf__ and is stored
+in the database cluster's data directory.
+This file needs to be adjusted, and
+more [details can be found here](https://debezium.io/documentation/reference/2.5/connectors/postgresql.html#postgresql-permissions)
+
+```bash
+ apt update && apt install nano
+ nano var/lib/postgresql/data/pgdata/pg_hba.conf
+
+# make these additions
+local   replication     replicator                          trust
+host    replication     replicator  127.0.0.1/32            trust
+host    replication     replicator  ::1/128                 trust
+ 
+ # change another file
+ nano var/lib/postgresql/data/pgdata/postgresql.con
+ 
+# make these changes
+wal_level = logical 
+```
 

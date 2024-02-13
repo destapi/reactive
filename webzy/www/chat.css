@@ -1,0 +1,132 @@
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+ul,
+ol,
+dl,
+p {
+    font-size: 1rem;
+}
+
+li,
+p {
+    line-height: 1.2;
+}
+
+.container {
+    width: 700px;
+    margin: 20px auto;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.chat-section {
+    width: 500px;
+    border: 1px solid #666;
+}
+
+.users-section {
+    border: 1px solid #666;
+    flex: 1;
+}
+
+.users-section ul {
+    list-style: none;
+    padding: 5px;
+}
+
+.users-section ul li {
+    padding-bottom: 5px;
+    border-bottom: 1px solid #666;
+}
+
+.users-section ul li .screenname {
+    padding-top: 5px;
+    cursor: pointer;
+}
+
+.users-section ul li .location {
+    font-size: 0.8em;
+    font-style: italic;
+    margin: 5px 0;
+}
+
+.hidden {
+    display: none;
+}
+
+#user-type-form {
+    padding: 10px;
+}
+
+#user-type-form label {
+    display: inline-block;
+    padding: 5px;
+}
+
+#user-type-form input {
+    display: inline-block;
+    margin: 5px 10px 0;
+}
+
+#organizer, #participant {
+    padding: 10px;
+    border-bottom: 1px solid #333;
+}
+
+#organizer input, #participant input {
+    padding: 5px;
+}
+
+#conversation {
+    border-bottom: 1px solid;
+    min-height: 100px;
+    width: 100%;
+}
+
+#composer-section {
+    width: 100%;
+}
+
+#compose-message {
+    min-height: 70px;
+    border-bottom: 1px solid #ccc;
+    padding: 10px 10px 5px;
+}
+
+#compose-message textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 5px;
+}
+
+#send-message {
+    min-height: 30px;
+    padding: 5px;
+    text-align: right;
+}
+
+#send-message input[type=button] {
+    padding: 5px 10px;
+}
+
+.chat-message {
+    margin: 10px;
+    border: 1px solid #666;
+    padding: 10px;
+    border-radius: 5px;
+    width: 80%;
+}
+
+.chat-message.right {
+    margin-left: 90px;
+}
+
+.chat-message label {
+    font-size: 0.8em;
+    font-weight: bold;
+}

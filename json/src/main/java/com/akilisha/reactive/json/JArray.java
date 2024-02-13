@@ -74,4 +74,12 @@ public class JArray extends LinkedList<Object> implements JNode {
         }
         return (E) value;
     }
+
+    @Override
+    public void removeAll() {
+        for (int i = 0; i < size(); i++) {
+            // this should trigger 'remove' event for all items in the array
+            removeItem(i);
+        }
+    }
 }

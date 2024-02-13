@@ -26,10 +26,10 @@ class JWriterTest {
 
     @Test
     void verify_generated_json_matched_sample_json() throws IOException {
-        JNode node = JReader.fromJson(new StringReader(sample));
-        String json = new JWriter().generate(node);
+        JNode node = JReader.parseJson(new StringReader(sample));
+        String json = JWriter.stringify(node);
         System.out.println(json);
-        JNode node2 = JReader.fromJson(new StringReader(json));
+        JNode node2 = JReader.parseJson(new StringReader(json));
         assertThat(node).isEqualTo(node2);
     }
 }

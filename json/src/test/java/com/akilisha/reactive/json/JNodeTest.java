@@ -63,7 +63,7 @@ class JNodeTest {
     void verify_parsing_json_into_JNode() throws IOException {
         JNode user = sampleNode();
 
-        JNode userNode = JReader.fromJson("/user-data.json");
+        JNode userNode = JReader.parseJson("/user-data.json");
         assertThat(userNode).isNotNull();
         assertThat(user.size()).isEqualTo(userNode.size());
 

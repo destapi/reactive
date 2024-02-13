@@ -3,6 +3,7 @@ package com.akilisha.reactive.webzy.sess;
 import com.akilisha.reactive.json.JNode;
 import com.akilisha.reactive.json.JObject;
 import com.akilisha.reactive.json.JReader;
+import com.akilisha.reactive.json.JWriter;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,12 +36,12 @@ public class SessionDemo extends HttpServlet {
             }
         }
         resp.setStatus(200);
-        resp.getWriter().println(preferences);
+        resp.getWriter().println(JWriter.stringify(preferences));
     }
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        JNode preferences = JReader.fromJson(req.getInputStream());
+        JNode preferences = JReader.parseJson(req.getInputStream());
         HttpSession session = req.getSession(true);
         session.setAttribute(PREFERENCES, preferences);
         preferences.putItem("mood", "happy");

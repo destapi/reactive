@@ -12,9 +12,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
-import java.util.Arrays;
 import java.util.Objects;
-import java.util.Optional;
+
+import static com.akilisha.reactive.webzy.Main.updateFromQueryString;
 
 public class EventsServlet extends HttpServlet {
 
@@ -38,7 +38,7 @@ public class EventsServlet extends HttpServlet {
                 resp.setStatus(200);
                 try {
                     PrintWriter out = resp.getWriter();
-                    observer.setOut(out);
+                    observer.setWriter(out);
                     observer.write("connected", "now connected for data events");
                 } catch (IOException e) {
                     async.complete();
@@ -50,17 +50,10 @@ public class EventsServlet extends HttpServlet {
 
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (preferences == null) {
-            preferences = JReader.fromJson(new StringReader("{}"));
+            preferences = JReader.parseJson(new StringReader("{}"));
             preferences.setObserver(observer);
         }
-        String[][] choices = Arrays.stream(Objects.requireNonNullElse(req.getQueryString(), "expecting parameters in the query string")
-                .split("&")).map(m -> m.split("=")).toArray(String[][]::new);
-        int len = Optional.of(choices).map(q -> q.length).orElse(0);
-        if (len > 0) {
-            for (String[] pair : choices) {
-                preferences.putItem(pair[0], pair[1]);
-            }
-        }
+        updateFromQueryString(preferences, Objects.requireNonNullElse(req.getQueryString(), "expecting parameters in the query string"));
 
         resp.setStatus(200);
         resp.getWriter().println(preferences);

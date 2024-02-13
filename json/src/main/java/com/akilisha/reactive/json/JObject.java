@@ -1,6 +1,8 @@
 package com.akilisha.reactive.json;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.Set;
 
 public class JObject extends LinkedHashMap<String, Object> implements JNode {
 
@@ -74,5 +76,14 @@ public class JObject extends LinkedHashMap<String, Object> implements JNode {
             rootObserver.delete(this, this.tracePath(), key, value);
         }
         return (E) value;
+    }
+
+    @Override
+    public void removeAll() {
+        Set<String> keys = new HashSet<>(keySet());
+        for (String key : keys) {
+            //this should trigger 'remove' event for all items in the map
+            removeItem(key);
+        }
     }
 }

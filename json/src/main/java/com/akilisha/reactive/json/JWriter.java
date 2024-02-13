@@ -7,25 +7,33 @@ import jakarta.json.stream.JsonGeneratorFactory;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAccessor;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 
-public class JWriter {
+public interface JWriter {
 
-    public static final JsonGeneratorFactory factory = Json.createGeneratorFactory(
+    JsonGeneratorFactory factory = Json.createGeneratorFactory(
             //note that supported options are provider-specific except pretty printing
             Map.of(JsonGenerator.PRETTY_PRINTING, "\t")
     );
 
-    public String generate(Object node) {
+    SimpleDateFormat UTC_DATE_TIME_FORMATTER = new SimpleDateFormat("MM-dd-yyyy'T'HH:mm:ssZ");
+    DateTimeFormatter ISO_DATE_TIME_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
+
+    static String stringify(Object node) {
         StringWriter rt = new StringWriter();
         JsonGenerator generator = factory.createGenerator(rt);
-        generate(generator, node, null);
+        stringify(generator, node, null);
         generator.close();
-        return rt.toString();
+        return rt.toString().trim();
     }
 
-    public void generate(JsonGenerator generator, Object node, String name) {
+    static void stringify(JsonGenerator generator, Object node, String name) {
         if (((JNode) node).isObject()) {
             if (name != null && !name.trim().isEmpty()) {
                 generator.writeStartObject(name);
@@ -36,7 +44,7 @@ public class JWriter {
                 String key = entry.getKey();
                 Object value = entry.getValue();
                 if (JNode.class.isAssignableFrom(value.getClass())) {
-                    generate(generator, value, key);
+                    stringify(generator, value, key);
                 } else {
                     resolveAndWrite(generator, key, value);
                 }
@@ -51,14 +59,14 @@ public class JWriter {
             }
             for (Object child : ((Collection<?>) node)) {
                 if (JNode.class.isAssignableFrom(child.getClass())) {
-                    generate(generator, child, null);
+                    stringify(generator, child, null);
                 }
             }
             generator.writeEnd();
         }
     }
 
-    private void resolveAndWrite(JsonGenerator generator, String key, Object value) {
+    static void resolveAndWrite(JsonGenerator generator, String key, Object value) {
         if (int.class.isAssignableFrom(value.getClass())) {
             generator.write(key, (int) value);
         } else if (long.class.isAssignableFrom(value.getClass())) {
@@ -73,8 +81,12 @@ public class JWriter {
             generator.write(key, (boolean) value);
         } else if (String.class.isAssignableFrom(value.getClass())) {
             generator.write(key, (String) value);
+        } else if (Date.class.isAssignableFrom(value.getClass())) {
+            generator.write(key, UTC_DATE_TIME_FORMATTER.format((Date) value));
+        } else if (Temporal.class.isAssignableFrom(value.getClass())) {
+            generator.write(key, ISO_DATE_TIME_FORMATTER.format((TemporalAccessor) value));
         } else {
-            System.out.printf("'%s' type is not yet handled", value.getClass());
+            System.out.printf("'%s' type is not yet handled\n", value.getClass());
         }
     }
 }

@@ -10,7 +10,7 @@ import java.io.PrintWriter;
 @Getter
 public class DataEvents implements Observer {
 
-    PrintWriter out;
+    PrintWriter writer;
 
     @Override
     public void set(Object target, String path, String key, Object oldValue, Object newValue) {
@@ -29,9 +29,11 @@ public class DataEvents implements Observer {
 
     @Override
     public void write(String event, String data) {
-        out.write(String.format("event: %s\n", event));
-        out.write(String.format("data: %s\n\n", data));
-        out.flush();
-        System.out.println("writing data event to - " + String.format("%s: %s (%d)", event, data, System.identityHashCode(out)));
+        if (writer != null) {
+            writer.write(String.format("event: %s\n", event));
+            writer.write(String.format("data: %s\n\n", data));
+            writer.flush();
+            System.out.println("writing data event to - " + String.format("%s: %s (%d)", event, data, System.identityHashCode(writer)));
+        }
     }
 }

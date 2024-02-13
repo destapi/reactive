@@ -1,5 +1,11 @@
 package com.akilisha.reactive.webzy;
 
+import com.akilisha.reactive.json.JNode;
+import com.akilisha.reactive.json.Observer;
+import com.akilisha.reactive.webzy.cdc.CdcConnect;
+import com.akilisha.reactive.webzy.chat.ChatObserver;
+import com.akilisha.reactive.webzy.chat.ChatServlet;
+import com.akilisha.reactive.webzy.chat.JoinServlet;
 import com.akilisha.reactive.webzy.sess.SessionDemo;
 import com.akilisha.reactive.webzy.sse.EventsServlet;
 import com.akilisha.reactive.webzy.ws.EventsEndpoint;
@@ -17,10 +23,13 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer;
 
+import javax.sql.DataSource;
 import java.io.File;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -87,6 +96,15 @@ public class Main {
         return storeFactory;
     }
 
+    public static JDBCSessionDataStoreFactory addJdbcDataStoreFactory(DataSource dataSource) {
+        DatabaseAdaptor databaseAdaptor = new DatabaseAdaptor();
+        databaseAdaptor.setDatasource(dataSource);
+        // databaseAdaptor.setDatasource(myDataSource); // you can set data source here (for connection pooling, etc)
+        JDBCSessionDataStoreFactory jdbcSessionDataStoreFactory = new JDBCSessionDataStoreFactory();
+        jdbcSessionDataStoreFactory.setDatabaseAdaptor(databaseAdaptor);
+        return jdbcSessionDataStoreFactory;
+    }
+
     public static SessionHandler configureSessionHandler(Server server, File dir) throws Exception {
         SessionHandler sessionHandler = new SessionHandler();
         // default config
@@ -100,15 +118,52 @@ public class Main {
         return sessionHandler;
     }
 
+    public static SessionHandler configureJdbcSessionHandler(Server server, DataSource dataSource) throws Exception {
+        SessionHandler sessionHandler = new SessionHandler();
+        // default config
+        sessionHandler.setHttpOnly(true);
+        sessionHandler.setSecureRequestOnly(true);
+        sessionHandler.setSameSite(HttpCookie.SameSite.STRICT);
+        // custom config
+        sessionHandler.setSessionIdManager(configureSessionIdManager(server));
+        sessionHandler.setSessionCache(addDefaultSessionCacheFactory(server).newSessionCache(sessionHandler));
+        sessionHandler.getSessionCache().setSessionDataStore(addJdbcDataStoreFactory(dataSource).getSessionDataStore(sessionHandler));
+        return sessionHandler;
+    }
+
     public static ServletContextHandler configureEventsSource(Server server, String ctx) {
         ServletContextHandler context = new ServletContextHandler(server, ctx);
 
         //add new data events listener
         ServletHolder dataEventsHolder = new ServletHolder();
         dataEventsHolder.setServlet(new EventsServlet(new DataEvents()));
-        dataEventsHolder.setInitOrder(0);
+        dataEventsHolder.setInitOrder(2);
         dataEventsHolder.setAsyncSupported(true);
         context.addServlet(dataEventsHolder, "/*");
+        return context;
+    }
+
+    public static ServletContextHandler configureJoinServlet(Server server, String ctx, ChatObserver observer) {
+        ServletContextHandler context = new ServletContextHandler(server, ctx);
+
+        //add new data events listener
+        ServletHolder chatHolder = new ServletHolder();
+        chatHolder.setServlet(new JoinServlet(observer));
+        chatHolder.setInitOrder(1);
+        chatHolder.setAsyncSupported(true);
+        context.addServlet(chatHolder, "/*");
+        return context;
+    }
+
+    public static ServletContextHandler configureChatServlet(Server server, String ctx, ChatObserver observer) {
+        ServletContextHandler context = new ServletContextHandler(server, ctx);
+
+        //add new data events listener
+        ServletHolder chatHolder = new ServletHolder();
+        chatHolder.setServlet(new ChatServlet(observer));
+        chatHolder.setInitOrder(0);
+        chatHolder.setAsyncSupported(true);
+        context.addServlet(chatHolder, "/*");
         return context;
     }
 
@@ -139,24 +194,40 @@ public class Main {
         return context;
     }
 
+    public static void updateFromQueryString(JNode node, String query) {
+        String[][] choices = Arrays.stream(query.split("&")).map(m -> m.split("=")).toArray(String[][]::new);
+        int len = Optional.of(choices).map(q -> q.length).orElse(0);
+        if (len > 0) {
+            for (String[] pair : choices) {
+                node.putItem(pair[0], pair[1]);
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         int port = 9080;
         String resourceRoot = "C:\\Projects\\java\\reactive\\webzy\\www";
         Server server = createServer(port);
 
-        // configure sess factories
+        // configure file data session handler
         Path sessionDir = Path.of(System.getProperty("user.dir"), "webzy/sess");
-        SessionHandler sessionHandler = configureSessionHandler(server, sessionDir.toFile());
+        SessionHandler fileDataSessionHandler = configureSessionHandler(server, sessionDir.toFile());
+
+        // configure jdbc data session handler
+//        String driver = "org.h2.Driver";
+//        String url = "jdbc:h2:tcp://localhost/~/.data/h2/jdbc-session;USER=sa;PASSWORD=sa";
+        SessionHandler jdbcDataSessionHandler = configureJdbcSessionHandler(server, CdcConnect.instance.dataSource());
 
         // servlet context
         ServletContextHandler context = new ServletContextHandler(server, "/");
-        context.setSessionHandler(sessionHandler);
+//        context.setSessionHandler(fileDataSessionHandler);
+        context.setSessionHandler(jdbcDataSessionHandler);
         context.setBaseResource(Resource.newResource(resourceRoot));
         context.setWelcomeFiles(new String[]{"index.html"});
 
         // configure servlet for playing with sess
-        ServletHolder sessionHolder = context.addServlet(SessionDemo.class, "/data");
-        sessionHolder.setInitParameter("sessionDir", sessionDir.toString());
+        ServletHolder sessionDemo = context.addServlet(SessionDemo.class, "/data");
+        sessionDemo.setInitParameter("sessionDir", sessionDir.toString());
 
         //configure websocket
         ServletContextHandler wsContext = configureWebsocket(server, "/events", EventsEndpoint::new);
@@ -164,16 +235,25 @@ public class Main {
         //configure event source
         ServletContextHandler sseContext = configureEventsSource(server, "/sse");
 
+        //configure chat servlet
+        ChatObserver observer = new ChatObserver();
+        ServletContextHandler chatServlet = configureChatServlet(server, "/chat", observer);
+        ServletContextHandler joinServlet = configureJoinServlet(server, "/join", observer);
+
         // add and configure default servlet
         ServletHolder defaultHolder = context.addServlet(DefaultServlet.class, "/");
         defaultHolder.setInitParameter("dirAllowed", "false");
         defaultHolder.setInitParameter("gzip", "true");
 
-        // start server
+        // configure handlers
         ContextHandlerCollection contexts = new ContextHandlerCollection();
         contexts.addHandler(context);
         contexts.addHandler(wsContext);
         contexts.addHandler(sseContext);
+        contexts.addHandler(chatServlet);
+        contexts.addHandler(joinServlet);
+
+        // add handler and start server
         server.setHandler(contexts);
         server.start();
     }

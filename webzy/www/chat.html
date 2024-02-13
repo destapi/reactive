@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+          name="viewport">
+    <meta content="ie=edge" http-equiv="X-UA-Compatible">
+    <title>Chatty</title>
+    <link href="chat.css" rel="stylesheet" type="text/css"/>
+    <script src="chat.js" type="text/javascript" defer></script>
+</head>
+<body>
+<main class="container">
+    <section class="chat-section">
+        <div id="user-type">
+            <form id="user-type-form">
+                <label>
+                    <input type="radio" value="organizer" name="user" checked onclick="toggleUserType(this)"/> Organizer
+                </label>
+                <label>
+                    <input type="radio" value="participant" name="user" onclick="toggleUserType(this)"/> Participant
+                </label>
+            </form>
+        </div>
+        <div id="organizer">
+            <form id="chat-organizer">
+                <label>
+                    <input name="chatName" value="cassa" placeholder="chat name"/>
+                </label>
+                <label>
+                    <input name="screenName" value="jimmy" placeholder="screen name"/>
+                </label>
+                <input type="hidden" name="chatId" value=""/>
+                <input type="submit" value="Organize">
+            </form>
+        </div>
+
+        <div id="participant" class="hidden">
+            <form id="chat-participant">
+                <label>
+                    <input name="chatId" value="" placeholder="chat id"/>
+                </label>
+                <label>
+                    <input name="screenName" value="kadzo" placeholder="screen name"/>
+                </label>
+                <input type="submit" value="Join">
+            </form>
+        </div>
+
+        <div id="conversation">
+            <section id="messages">
+                <div class="chat-message left">
+                    <label class="from">Jimmy Krey</label>
+                    <label class="time">9:58AM</label>
+                    <div class="content">There was just one thing we didn't talk about</div>
+                </div>
+                <div class="chat-message right">
+                    <label class="to">Me</label>
+                    <label class="time">9:59AM</label>
+                    <div class="content">I think there were two, if I'm recalling correctly</div>
+                </div>
+                <div class="chat-message left">
+                    <label class="to">Kadzo</label>
+                    <label class="time">10.01AM</label>
+                    <div class="content">Actually you might be right. Let me quickly verify that</div>
+                </div>
+            </section>
+        </div>
+
+        <div id="composer-section">
+            <section id="compose-message">
+                <label>
+                    <textarea></textarea>
+                </label>
+            </section>
+
+            <section id="send-message">
+                <input type="button" onclick="sendMessage()" value="Send"/>
+            </section>
+        </div>
+    </section>
+
+    <section class="users-section">
+        <ul id="participants-list">
+            <li class="participant-info">
+                <div class="screenname">Jimmy Krey</div>
+                <div class="location">Madison, WI</div>
+            </li>
+        </ul>
+    </section>
+</main>
+</body>
+</html>

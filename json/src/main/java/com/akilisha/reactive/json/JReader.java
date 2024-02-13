@@ -8,26 +8,23 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.util.Stack;
 
-public class JReader {
+public interface JReader {
 
-    private JReader() {
+    static JNode parseJson(Reader reader) {
+        return parseJson(Json.createParser(reader));
     }
 
-    public static JNode fromJson(Reader reader) throws IOException {
-        return fromJson(Json.createParser(reader));
+    static JNode parseJson(InputStream is) {
+        return parseJson(Json.createParser(is));
     }
 
-    public static JNode fromJson(InputStream is) throws IOException {
-        return fromJson(Json.createParser(is));
-    }
-
-    public static JNode fromJson(String json) throws IOException {
+    static JNode parseJson(String json) throws IOException {
         try (InputStream fis = JReader.class.getResourceAsStream(json)) {
-            return fromJson(fis);
+            return parseJson(fis);
         }
     }
 
-    public static JNode fromJson(JsonParser jsonParser) throws IOException {
+    static JNode parseJson(JsonParser jsonParser) {
         Stack<JNode> stack = new Stack<>();
         Stack<String> keys = new Stack<>();
 
@@ -143,5 +140,9 @@ public class JReader {
             }
         }
         throw new RuntimeException("Looks like the parsing was not successful since the processing stack still contains values");
+    }
+
+    static JNode fromObject(Object root) {
+        return null;
     }
 }

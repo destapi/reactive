@@ -28,4 +28,7 @@ public interface Observer {
 
     default void write(String event, String data) {
     }
+
+    default void write(String target, String event, String data) {
+    }
 }

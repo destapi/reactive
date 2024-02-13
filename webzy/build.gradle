@@ -28,6 +28,18 @@ dependencies {
 
     // database
     implementation 'com.h2database:h2:2.2.224'
+    implementation 'org.postgresql:postgresql:42.3.8'
+    implementation 'com.mysql:mysql-connector-j:8.3.0'
+    implementation 'com.zaxxer:HikariCP:5.1.0'
+
+    // change data capture - debezium
+    implementation 'io.debezium:debezium-api:2.5.1.Final'
+    implementation 'io.debezium:debezium-embedded:2.5.1.Final'
+    implementation 'io.debezium:debezium-connector-postgres:2.5.1.Final'
+    implementation 'io.debezium:debezium-connector-mysql:2.5.1.Final'
+
+    // asm
+    compileOnly 'org.ow2.asm:asm:9.6'
 
     // lombok
     compileOnly 'org.projectlombok:lombok:1.18.30'

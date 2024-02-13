@@ -70,4 +70,8 @@ public interface JNode extends Serializable {
         }
         return fullPath;
     }
+
+    default void removeAll() {
+
+    }
 }

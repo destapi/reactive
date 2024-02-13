@@ -15,7 +15,7 @@ class ObserverTest {
 
     @Test
     void verify_adding_literal_to_array() throws IOException {
-        JNode userNode = JReader.fromJson("/user-data.json");
+        JNode userNode = JReader.parseJson("/user-data.json");
         PrintWriter writer = mock(PrintWriter.class);
         userNode.setObserver(new AddLiteralToArrayObserver(writer));
 
@@ -25,7 +25,7 @@ class ObserverTest {
 
     @Test
     void verify_updating_property_in_object() throws IOException {
-        JNode userNode = JReader.fromJson("/user-data.json");
+        JNode userNode = JReader.parseJson("/user-data.json");
         PrintWriter writer = mock(PrintWriter.class);
         userNode.setObserver(new UpdateObjectPropertyObserver(writer));
 
@@ -35,7 +35,7 @@ class ObserverTest {
 
     @Test
     void verify_adding_jnode_to_array() throws IOException {
-        JNode userNode = JReader.fromJson("/user-data.json");
+        JNode userNode = JReader.parseJson("/user-data.json");
         PrintWriter writer = mock(PrintWriter.class);
         ArgumentCaptor<String> message = ArgumentCaptor.forClass(String.class);
         userNode.setObserver(new AddJNodeToArrayObserver(writer));
