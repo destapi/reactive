@@ -1,6 +1,8 @@
 package com.akilisha.reactive.json;
 
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.function.Function;
 
 public class JArray extends LinkedList<Object> implements JNode {
 
@@ -66,13 +68,12 @@ public class JArray extends LinkedList<Object> implements JNode {
     }
 
     @Override
-    public <E> E removeItem(int index) {
+    public void removeItem(int index) {
         Object value = remove(index);
         Observer rootObserver = this.root().getObserver();
         if (rootObserver != null) {
             rootObserver.delete(this, this.tracePath(), index, value);
         }
-        return (E) value;
     }
 
     @Override
@@ -80,6 +81,21 @@ public class JArray extends LinkedList<Object> implements JNode {
         for (int i = 0; i < size(); i++) {
             // this should trigger 'remove' event for all items in the array
             removeItem(i);
+        }
+    }
+
+    @Override
+    public void removeWhere(Function<JNode, Boolean> predicate) {
+        for (Iterator<Object> iter = this.iterator(); iter.hasNext(); ) {
+            JNode taskNode = (JNode) iter.next();
+            if (predicate.apply(taskNode)) {
+                iter.remove();
+                Observer rootObserver = this.root().getObserver();
+                if (rootObserver != null) {
+                    rootObserver.delete(this, this.tracePath(), taskNode);
+                }
+                break;
+            }
         }
     }
 }

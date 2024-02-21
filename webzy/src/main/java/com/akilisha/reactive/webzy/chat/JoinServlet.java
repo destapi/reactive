@@ -1,6 +1,7 @@
 package com.akilisha.reactive.webzy.chat;
 
 import com.akilisha.reactive.json.*;
+import com.akilisha.reactive.webzy.todos.model.MockTodos;
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -11,7 +12,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.UUID;
 
 public class JoinServlet extends HttpServlet {
 
@@ -55,7 +55,7 @@ public class JoinServlet extends HttpServlet {
         Participant participant = MockPeople.get(screenName);
         if (participant != null) {
             String chatId = user.getItem("chatId");
-            JNode chat = MockChatter.get(chatId);
+            JNode chat = MockTodos.get(chatId);
             JNode node = JClass.nodify(participant);
             Objects.requireNonNull(node).putItem("chatId", chatId);
             JNode participants = chat.getItem("participants");

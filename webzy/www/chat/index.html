@@ -7,7 +7,7 @@
     <meta content="ie=edge" http-equiv="X-UA-Compatible">
     <title>Chatty</title>
     <link href="chat.css" rel="stylesheet" type="text/css"/>
-    <script src="chat.js" type="text/javascript" defer></script>
+    <script defer src="chat.js" type="text/javascript"></script>
 </head>
 <body>
 <main class="container">
@@ -15,33 +15,33 @@
         <div id="user-type">
             <form id="user-type-form">
                 <label>
-                    <input type="radio" value="organizer" name="user" checked onclick="toggleUserType(this)"/> Organizer
+                    <input checked name="user" onclick="toggleUserType(this)" type="radio" value="organizer"/> Organizer
                 </label>
                 <label>
-                    <input type="radio" value="participant" name="user" onclick="toggleUserType(this)"/> Participant
+                    <input name="user" onclick="toggleUserType(this)" type="radio" value="member"/> Participant
                 </label>
             </form>
         </div>
         <div id="organizer">
             <form id="chat-organizer">
                 <label>
-                    <input name="chatName" value="cassa" placeholder="chat name"/>
+                    <input name="chatName" placeholder="chat name" value="cassa"/>
                 </label>
                 <label>
-                    <input name="screenName" value="jimmy" placeholder="screen name"/>
+                    <input name="screenName" placeholder="screen name" value="jimmy"/>
                 </label>
-                <input type="hidden" name="chatId" value=""/>
+                <input name="chatId" type="hidden" value=""/>
                 <input type="submit" value="Organize">
             </form>
         </div>
 
-        <div id="participant" class="hidden">
-            <form id="chat-participant">
+        <div class="hidden" id="member">
+            <form id="chat-member">
                 <label>
-                    <input name="chatId" value="" placeholder="chat id"/>
+                    <input name="chatId" placeholder="chat id" value=""/>
                 </label>
                 <label>
-                    <input name="screenName" value="kadzo" placeholder="screen name"/>
+                    <input name="screenName" placeholder="screen name" value="kadzo"/>
                 </label>
                 <input type="submit" value="Join">
             </form>
@@ -75,14 +75,14 @@
             </section>
 
             <section id="send-message">
-                <input type="button" onclick="sendMessage()" value="Send"/>
+                <input onclick="sendMessage()" type="button" value="Send"/>
             </section>
         </div>
     </section>
 
     <section class="users-section">
         <ul id="participants-list">
-            <li class="participant-info">
+            <li class="member-info">
                 <div class="screenname">Jimmy Krey</div>
                 <div class="location">Madison, WI</div>
             </li>

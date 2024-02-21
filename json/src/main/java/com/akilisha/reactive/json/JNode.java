@@ -2,6 +2,7 @@ package com.akilisha.reactive.json;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.function.Function;
 
 public interface JNode extends Serializable {
 
@@ -43,12 +44,13 @@ public interface JNode extends Serializable {
         return null;
     }
 
-    default <E> E removeItem(int index) {
-        return null;
+    default void removeItem(int index) {
     }
 
-    default <E> E removeItem(String key) {
-        return null;
+    default void removeItem(String key) {
+    }
+
+    default void removeWhere(Function<JNode, Boolean> predicate) {
     }
 
     default JNode root() {

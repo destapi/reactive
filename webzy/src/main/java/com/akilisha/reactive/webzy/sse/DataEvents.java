@@ -1,4 +1,4 @@
-package com.akilisha.reactive.webzy;
+package com.akilisha.reactive.webzy.sse;
 
 import com.akilisha.reactive.json.Observer;
 import lombok.Getter;

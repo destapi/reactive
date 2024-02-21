@@ -17,10 +17,10 @@ public class ChatObserver implements Observer {
     @Override
     public void set(Object target, String path, String key, Object oldValue, Object newValue) {
         if (path.equals(".chatMessages")) {
-            String chatId = ((JNode)newValue).getItem("chatId");
+            String chatId = ((JNode) newValue).getItem("chatId");
             write(chatId, "messages", JWriter.stringify(newValue));
         } else if (path.equals(".participants")) {
-            String chatId = ((JNode)newValue).getItem("chatId");
+            String chatId = ((JNode) newValue).getItem("chatId");
             write(chatId, "participants", JWriter.stringify(newValue));
         } else {
             System.out.printf("Setting value in %s from %s to %s\n", path, oldValue, newValue);

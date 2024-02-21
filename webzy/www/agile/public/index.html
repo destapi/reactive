@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+          name="viewport">
+    <meta content="ie=edge" http-equiv="X-UA-Compatible">
+    <meta content="A simple voting page for agile todo planning." name="description">
+    <title><%= htmlWebpackPlugin.options.title %></title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/grids-responsive-min.css" rel="stylesheet">
+    <link href="fa/css/font-awesome.min.css" rel="stylesheet">
+    <link href="scrum.css" rel="stylesheet" type="text/css"/>
+</head>
+<body>
+<main class="container" id="root"></main>
+<template id="navigation-template">
+    <nav class="navigation">
+        <div class="logo"><i aria-hidden="true" class="fa fa-cogs"></i></div>
+        <div class="title">Scrum's Up</div>
+        <label class="pure-checkbox" for="organizer">
+            <input checked id="organizer" name="user-type" type="radio"
+                   value="organizer"/> Scrum Master
+        </label>
+        <label class="pure-checkbox" for="participant">
+            <input id="participant" name="user-type" type="radio" value="participant"/>
+            Participant
+        </label>
+        <div class="menu">
+            <i aria-hidden="true" class="fa fa-github"></i>
+        </div>
+    </nav>
+</template>
+<template id="participant-form-template">
+    <section class="pure-g">
+        <form class="pure-form participant-form">
+            <fieldset class="pure-group">
+                <label>
+                    <input class="pure-input-1-2" name="screenName" placeholder="Screen Name" type="text"/>
+                </label>
+            </fieldset>
+            <fieldset class="pure-group">
+                <label>
+                    <input class="pure-input-1-2" name="scrumId" placeholder="Scrum Id" type="text"/>
+                </label>
+            </fieldset>
+            <button class="pure-button pure-input-1-2 pure-button-primary" type="submit">Join</button>
+        </form>
+    </section>
+</template>
+<template id="organizer-form-template">
+    <section class="pure-g">
+        <form class="pure-form organizer-form">
+            <fieldset class="pure-group">
+                <label>
+                    <input class="pure-input-1-2" name="screenName" placeholder="Screen Name" type="text"/>
+                </label>
+            </fieldset>
+            <fieldset class="pure-group">
+                <label>
+                    <input class="pure-input-1-2" name="scrumTitle" placeholder="Scrum Title" type="text"/>
+                </label>
+            </fieldset>
+            <fieldset class="pure-group">
+                <label>
+                    <textarea class="pure-input-1-2" name="voteChoices"
+                              placeholder="Add choices, one line per choice"></textarea>
+                </label>
+            </fieldset>
+            <button class="pure-button pure-input-1-2 pure-button-primary" type="submit">Organize</button>
+        </form>
+    </section>
+</template>
+<template id="vote-form-template">
+    <section class="pure-g">
+        <form class="pure-form form-row" id="vote-form">
+            <div class="text-area">
+                <i aria-hidden="true" class="fa fa-plus-circle send" ></i>
+                <i aria-hidden="true" class="fa fa-times-circle reset" ></i>
+                <label>
+                    <textarea class="pure-input-1" placeholder="Estimate task"></textarea>
+                </label>
+            </div>
+        </form>
+    </section>
+</template>
+<template id="voting-progress-template">
+    <section class="flex-row" id="voting-progress">
+        <article class="pure-u-1-4">
+            <p class="controls"><i aria-hidden="true" class="fa fa-times-circle"></i></p>
+            <p class="vote">Thirds</p>
+        </article>
+        <article class="pure-u-1-4">
+            <p class="controls"><i aria-hidden="true" class="fa fa-times-circle"></i></p>
+            <p class="vote">Thirds</p>
+        </article>
+        <article class="pure-u-1-4">
+            <p class="controls"><i aria-hidden="true" class="fa fa-times-circle"></i></p>
+            <p class="vote">Thirds</p>
+        </article>
+        <article class="pure-u-1-4">
+            <p class="controls"><i aria-hidden="true" class="fa fa-times-circle"></i></p>
+            <p class="vote">Thirds</p>
+        </article>
+    </section>
+</template>
+<template id="submitting-choice-template">
+    <section class="flex-row" id="submitting-choice">
+        <article class="pure-u-1-4">
+            <p class="choice">?</p>
+        </article>
+        <article class="pure-u-1-4">
+            <p class="choice">?</p>
+        </article>
+        <article class="pure-u-1-4">
+            <p class="choice">?</p>
+        </article>
+        <article class="pure-u-1-4">
+            <p class="choice">?</p>
+        </article>
+    </section>
+</template>
+</body>
+</html>

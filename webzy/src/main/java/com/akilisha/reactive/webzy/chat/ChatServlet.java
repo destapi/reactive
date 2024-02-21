@@ -1,6 +1,7 @@
 package com.akilisha.reactive.webzy.chat;
 
 import com.akilisha.reactive.json.*;
+import com.akilisha.reactive.webzy.todos.model.MockTodos;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,10 +30,10 @@ public class ChatServlet extends HttpServlet {
             JNode node = JClass.nodify(participant);
             Objects.requireNonNull(node).parent(chat);
             chat.putItem("organizer", node);
-            chat.putItem("id", chatId);
+            chat.putItem("chatId", chatId);
             chat.putItem("startTime", LocalDateTime.now());
             chat.setObserver(this.observer);
-            MockChatter.put(chatId, chat);
+            MockTodos.put(chatId, chat);
 
             //prepare response
             resp.setStatus(201);
@@ -55,7 +56,7 @@ public class ChatServlet extends HttpServlet {
         String screenName = req.getParameter("screenName");
 
         if (MockPeople.containsKey(screenName)) {
-            JNode chat = MockChatter.get(chatId);
+            JNode chat = MockTodos.get(chatId);
 
             //new String(req.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
             JNode message = JReader.parseJson(req.getInputStream());
@@ -85,7 +86,7 @@ public class ChatServlet extends HttpServlet {
 //        String chatId = req.getParameter("chatId");
 //        String screenName = req.getParameter("screenName");
 //
-//        JNode chat = MockChatter.get(chatId);
+//        JNode chat = MockTodos.get(chatId);
 //        if (!((JNode) chat.getItem("organizer")).getItem("screenName").equals(screenName)) {
 //            JNode error = new JObject();
 //            error.putItem("message", String.format("User %s is not the chat organizer", screenName));
@@ -98,7 +99,7 @@ public class ChatServlet extends HttpServlet {
 //            JNode participants = chat.getItem("participants");
 //            participants.removeAll();
 //
-//            MockChatter.remove(chatId);
+//            MockTodos.remove(chatId);
 //
 //            JNode success = new JObject();
 //            success.putItem("message", String.format("%s chat has been deleted", chatId));

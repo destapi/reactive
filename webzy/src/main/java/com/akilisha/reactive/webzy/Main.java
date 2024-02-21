@@ -1,14 +1,21 @@
 package com.akilisha.reactive.webzy;
 
 import com.akilisha.reactive.json.JNode;
-import com.akilisha.reactive.json.Observer;
 import com.akilisha.reactive.webzy.cdc.CdcConnect;
 import com.akilisha.reactive.webzy.chat.ChatObserver;
 import com.akilisha.reactive.webzy.chat.ChatServlet;
 import com.akilisha.reactive.webzy.chat.JoinServlet;
+import com.akilisha.reactive.webzy.scrum.JoinScrumServlet;
+import com.akilisha.reactive.webzy.scrum.ScrumObserver;
+import com.akilisha.reactive.webzy.scrum.StartScrumServlet;
 import com.akilisha.reactive.webzy.sess.SessionDemo;
+import com.akilisha.reactive.webzy.sse.DataEvents;
 import com.akilisha.reactive.webzy.sse.EventsServlet;
+import com.akilisha.reactive.webzy.todos.JoinTodoServlet;
+import com.akilisha.reactive.webzy.todos.StartTodosServlet;
+import com.akilisha.reactive.webzy.todos.TodoListObserver;
 import com.akilisha.reactive.webzy.ws.EventsEndpoint;
+import jakarta.servlet.DispatcherType;
 import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
 import org.eclipse.jetty.http.HttpCookie;
 import org.eclipse.jetty.http.pathmap.PathSpec;
@@ -20,6 +27,7 @@ import org.eclipse.jetty.server.session.*;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer;
 
@@ -29,12 +37,17 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 
 public class Main {
+
+    public static final String SCRUMMING = "scrumming";
+    public static final String CHATTING = "chatting";
+    public static final String TODOLIST = "todolist";
 
     public static Server createServer(int port) {
         Server server = new Server();
@@ -143,7 +156,7 @@ public class Main {
         return context;
     }
 
-    public static ServletContextHandler configureJoinServlet(Server server, String ctx, ChatObserver observer) {
+    public static ServletContextHandler configureJoinChatServlet(Server server, String ctx, ChatObserver observer) {
         ServletContextHandler context = new ServletContextHandler(server, ctx);
 
         //add new data events listener
@@ -155,7 +168,33 @@ public class Main {
         return context;
     }
 
-    public static ServletContextHandler configureChatServlet(Server server, String ctx, ChatObserver observer) {
+    public static ServletContextHandler configureJoinScrumServlet(Server server, String ctx, ScrumObserver observer) {
+        ServletContextHandler context = new ServletContextHandler(server, ctx);
+
+        //add new data events listener
+        ServletHolder chatHolder = new ServletHolder();
+        chatHolder.setServlet(new JoinScrumServlet(observer));
+        chatHolder.setInitOrder(1);
+        chatHolder.setAsyncSupported(true);
+        context.addServlet(chatHolder, "/*");
+        context.addFilter(CrossOriginFilter.class, "/*", EnumSet.of(DispatcherType.REQUEST));
+        return context;
+    }
+
+    public static ServletContextHandler configureJoinTodoServlet(Server server, String ctx, TodoListObserver observer) {
+        ServletContextHandler context = new ServletContextHandler(server, ctx);
+
+        //add new data events listener
+        ServletHolder chatHolder = new ServletHolder();
+        chatHolder.setServlet(new JoinTodoServlet(observer));
+        chatHolder.setInitOrder(1);
+        chatHolder.setAsyncSupported(true);
+        context.addServlet(chatHolder, "/*");
+        context.addFilter(CrossOriginFilter.class, "/*", EnumSet.of(DispatcherType.REQUEST));
+        return context;
+    }
+
+    public static ServletContextHandler configureStartChatServlet(Server server, String ctx, ChatObserver observer) {
         ServletContextHandler context = new ServletContextHandler(server, ctx);
 
         //add new data events listener
@@ -164,6 +203,32 @@ public class Main {
         chatHolder.setInitOrder(0);
         chatHolder.setAsyncSupported(true);
         context.addServlet(chatHolder, "/*");
+        return context;
+    }
+
+    public static ServletContextHandler configureStartScrumServlet(Server server, String ctx, ScrumObserver observer) {
+        ServletContextHandler context = new ServletContextHandler(server, ctx);
+
+        //add new data events listener
+        ServletHolder chatHolder = new ServletHolder();
+        chatHolder.setServlet(new StartScrumServlet(observer));
+        chatHolder.setInitOrder(0);
+        chatHolder.setAsyncSupported(true);
+        context.addServlet(chatHolder, "/*");
+        context.addFilter(CrossOriginFilter.class, "/*", EnumSet.of(DispatcherType.REQUEST));
+        return context;
+    }
+
+    public static ServletContextHandler configureStartTodoServlet(Server server, String ctx, TodoListObserver observer) {
+        ServletContextHandler context = new ServletContextHandler(server, ctx);
+
+        //add new data events listener
+        ServletHolder chatHolder = new ServletHolder();
+        chatHolder.setServlet(new StartTodosServlet(observer));
+        chatHolder.setInitOrder(0);
+        chatHolder.setAsyncSupported(true);
+        context.addServlet(chatHolder, "/*");
+        context.addFilter(CrossOriginFilter.class, "/*", EnumSet.of(DispatcherType.REQUEST));
         return context;
     }
 
@@ -205,6 +270,7 @@ public class Main {
     }
 
     public static void main(String[] args) throws Exception {
+        String activity = args.length > 0 ? args[0] : SCRUMMING;
         int port = 9080;
         String resourceRoot = "C:\\Projects\\java\\reactive\\webzy\\www";
         Server server = createServer(port);
@@ -235,10 +301,26 @@ public class Main {
         //configure event source
         ServletContextHandler sseContext = configureEventsSource(server, "/sse");
 
-        //configure chat servlet
-        ChatObserver observer = new ChatObserver();
-        ServletContextHandler chatServlet = configureChatServlet(server, "/chat", observer);
-        ServletContextHandler joinServlet = configureJoinServlet(server, "/join", observer);
+        //configure either chat or scrum servlet
+        ServletContextHandler startServlet = null;
+        ServletContextHandler joinServlet = null;
+
+        if (activity.equals(CHATTING)) {
+            ChatObserver chatObserver = new ChatObserver();
+            startServlet = configureStartChatServlet(server, "/chat", chatObserver);
+            joinServlet = configureJoinChatServlet(server, "/join", chatObserver);
+        } else if (activity.equals(SCRUMMING)) {
+            ScrumObserver scrumObserver = new ScrumObserver();
+            startServlet = configureStartScrumServlet(server, "/scrum", scrumObserver);
+            joinServlet = configureJoinScrumServlet(server, "/join", scrumObserver);
+        } else if(activity.equals(TODOLIST)){
+            TodoListObserver todosObserver = new TodoListObserver();
+            startServlet = configureStartTodoServlet(server, "/todos", todosObserver);
+            joinServlet = configureJoinTodoServlet(server, "/join", todosObserver);
+        }
+        else {
+            System.err.println("No activity has been registered");
+        }
 
         // add and configure default servlet
         ServletHolder defaultHolder = context.addServlet(DefaultServlet.class, "/");
@@ -250,8 +332,8 @@ public class Main {
         contexts.addHandler(context);
         contexts.addHandler(wsContext);
         contexts.addHandler(sseContext);
-        contexts.addHandler(chatServlet);
-        contexts.addHandler(joinServlet);
+        if (startServlet != null) contexts.addHandler(startServlet);
+        if (joinServlet != null) contexts.addHandler(joinServlet);
 
         // add handler and start server
         server.setHandler(contexts);

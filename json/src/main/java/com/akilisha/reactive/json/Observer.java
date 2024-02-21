@@ -26,7 +26,11 @@ public interface Observer {
     default void delete(Object target, String path, String key, Object value) {
     }
 
-    default void write(String event, String data) {
+    // jarray - remove using predicate function
+    default void delete(Object target, String path, Object value) {
+    }
+
+    default void write(String target, String data) {
     }
 
     default void write(String target, String event, String data) {

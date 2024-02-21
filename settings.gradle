@@ -14,4 +14,5 @@ rootProject.name = 'reactive'
 include 'data'
 include 'json'
 include 'webzy'
+include 'tcpnio'
 

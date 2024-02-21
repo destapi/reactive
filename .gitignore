@@ -9,3 +9,4 @@ build
 data-*
 **/session/
 **/lib/
+**/node_modules/

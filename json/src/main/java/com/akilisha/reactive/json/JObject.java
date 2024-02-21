@@ -48,13 +48,18 @@ public class JObject extends LinkedHashMap<String, Object> implements JNode {
     @Override
     public <E> void putItem(String key, E obj) {
         Object oldValue = get(key);
-        if (JNode.class.isAssignableFrom(obj.getClass())) {
-            ((JNode) obj).parent(this);
+        if (obj != null) {
+            if (JNode.class.isAssignableFrom(obj.getClass())) {
+                ((JNode) obj).parent(this);
+                ((JNode)obj).path(".".concat(key));
+            }
         }
+
         Observer rootObserver = this.root().getObserver();
         if (rootObserver != null) {
             rootObserver.set(this, this.tracePath(), key, oldValue, obj);
         }
+
         put(key, obj);
     }
 
@@ -69,13 +74,12 @@ public class JObject extends LinkedHashMap<String, Object> implements JNode {
     }
 
     @Override
-    public <E> E removeItem(String key) {
+    public void removeItem(String key) {
         Object value = remove(key);
         Observer rootObserver = this.root().getObserver();
         if (rootObserver != null) {
             rootObserver.delete(this, this.tracePath(), key, value);
         }
-        return (E) value;
     }
 
     @Override

@@ -29,7 +29,7 @@ const emptyUser = {
 
 let userType = "organizer"
 
-function toggleUserType(e){
+function toggleUserType(e) {
     userType = (e.value);
     document.getElementById("organizer").classList.toggle("hidden")
     document.getElementById("participant").classList.toggle("hidden")
@@ -50,13 +50,13 @@ const participantTemplate = (screenName, city, state) => `
 </li>
 `;
 
-function newChatMessage({sender, time,message, side}){
+function newChatMessage({sender, time, message, side}) {
     let fragment = document.createRange().createContextualFragment(
         chatMessageTemplate(sender, time, message, side).trim());
     document.getElementById("messages").appendChild(fragment.firstChild);
 }
 
-function newParticipant({screenName, city, state}){
+function newParticipant({screenName, city, state}) {
     let fragment = document.createRange().createContextualFragment(
         participantTemplate(screenName, city, state).trim());
     document.getElementById("participants-list").appendChild(fragment.firstChild);
@@ -64,7 +64,7 @@ function newParticipant({screenName, city, state}){
 
 const joinChatForm = document.getElementById("chat-participant");
 
-joinChatForm.addEventListener("submit",  async (e) => {
+joinChatForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const chatId = e.target.chatId.value;
@@ -90,7 +90,7 @@ joinChatForm.addEventListener("submit",  async (e) => {
 });
 
 const newChatForm = document.getElementById("chat-organizer");
-newChatForm.addEventListener("submit",  async (e) => {
+newChatForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const chatName = e.target.chatName.value;
@@ -130,13 +130,13 @@ function startEventSource(chatId, screenName) {
 
     evtSource.addEventListener('joined', event => {
         const data = JSON.parse(event.data);
-        let side = data.from === screenName? "right" : "left";
+        let side = data.from === screenName ? "right" : "left";
         newChatMessage({...data, sender: data.from, time: data.timeSent, side})
     });
 
     evtSource.addEventListener('messages', event => {
         const data = JSON.parse(event.data);
-        let side = data.from === screenName? "right" : "left";
+        let side = data.from === screenName ? "right" : "left";
         newChatMessage({...data, sender: data.from, time: data.timeSent, side})
     });
 
@@ -156,11 +156,11 @@ function startEventSource(chatId, screenName) {
     };
 }
 
-async function sendMessage(){
-    const sender = userType === "organizer"?
+async function sendMessage() {
+    const sender = userType === "organizer" ?
         document.querySelector("#chat-organizer").screenName.value :
         document.querySelector("#chat-participant").screenName.value
-    const chatId = userType === "organizer"?
+    const chatId = userType === "organizer" ?
         document.querySelector("#chat-organizer").chatId.value :
         document.querySelector("#chat-participant").chatId.value
     const message = document.querySelector("#compose-message textarea").value
@@ -168,7 +168,7 @@ async function sendMessage(){
     newMessage.chatId = chatId;
     newMessage.from = sender;
     newMessage.message = message;
-    if(message){
+    if (message) {
         const response = await fetch(`/chat/?chatId=${chatId}&screenName=${sender}`, {
             method: "PUT",
             headers: {'Content-Type': 'application/json'},

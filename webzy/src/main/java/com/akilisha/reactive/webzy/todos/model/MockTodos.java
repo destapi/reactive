@@ -1,31 +1,31 @@
-package com.akilisha.reactive.webzy.chat;
+package com.akilisha.reactive.webzy.todos.model;
 
 import com.akilisha.reactive.json.JNode;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class MockChatter {
+public class MockTodos {
 
-    public static final Map<String, JNode> chats = new ConcurrentHashMap<>();
+    public static final Map<String, JNode> todos = new ConcurrentHashMap<>();
 
-    private MockChatter() {
+    private MockTodos() {
     }
 
     public static JNode get(String name) {
-        return chats.get(name);
+        return todos.get(name);
     }
 
     public static JNode put(String name, JNode chat) {
-        return chats.put(name, chat);
+        return todos.put(name, chat);
     }
 
 
     public static boolean containsKey(String key) {
-        return chats.containsKey(key);
+        return todos.containsKey(key);
     }
 
     public static void remove(String key) {
-        chats.remove(key);
+        todos.remove(key);
     }
 }

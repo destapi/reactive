@@ -2,7 +2,6 @@ package com.akilisha.reactive.webzy.sse;
 
 import com.akilisha.reactive.json.JNode;
 import com.akilisha.reactive.json.JReader;
-import com.akilisha.reactive.webzy.DataEvents;
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;

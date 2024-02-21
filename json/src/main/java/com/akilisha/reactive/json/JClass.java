@@ -108,7 +108,7 @@ public class JClass extends ClassVisitor {
             String fieldName = Character.toLowerCase(potentialFieldName.charAt(0)) + potentialFieldName.substring(1);
             if (this.fieldNames.contains(fieldName)) {
                 try {
-                    MethodType mt = MethodType.methodType(Class.forName(Type.getReturnType(descriptor).getClassName()));
+                    MethodType mt = MethodType.methodType(returnType(descriptor));
                     MethodHandle handle = lookup.findVirtual(this.source.getClass(), name, mt);
                     Object fieldValue = handle.invoke(this.source);
                     if (fieldValue != null) {
@@ -119,6 +119,8 @@ public class JClass extends ClassVisitor {
                             JNode nodeValue = JClass.nodify(fieldValue);
                             this.parent.putItem(fieldName, nodeValue);
                         }
+                    } else {
+                        this.parent.putItem(fieldName, null);
                     }
                 } catch (Throwable e) {
                     throw new RuntimeException(e);
@@ -131,5 +133,27 @@ public class JClass extends ClassVisitor {
     @Override
     public void visitEnd() {
         super.visitEnd();
+    }
+
+    private Class<?> returnType(String descriptor) throws ClassNotFoundException {
+        String className = Type.getReturnType(descriptor).getClassName();
+        switch (className) {
+            case "boolean":
+                return boolean.class;
+            case "byte":
+                return byte.class;
+            case "short":
+                return short.class;
+            case "int":
+                return int.class;
+            case "float":
+                return float.class;
+            case "long":
+                return long.class;
+            case "double":
+                return double.class;
+            default:
+                return Class.forName(className);
+        }
     }
 }

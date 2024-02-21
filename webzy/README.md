@@ -458,7 +458,7 @@ This is simply listening to named events, and sending them all to an _ordered li
     <title>Data Events Demo</title>
     <link href="favicon.ico" rel="shortcut icon" type="image/x-icon"/>
     <link href="index.css" rel="stylesheet" type="text/css">
-    <script src="index.js" type="text/javascript"></script>
+    <script src="store.js" type="text/javascript"></script>
 </head>
 <body>
 <ol id="list"></ol>
