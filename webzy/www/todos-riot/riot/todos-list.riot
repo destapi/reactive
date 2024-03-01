@@ -5,17 +5,17 @@
         <li each={ item in state.todos }>
             <label class={ item.completed ? 'completed' : null }>
                 <input
-                        type="checkbox"
                         checked={ item.completed }
-                        onclick={ () => props.toggleDoneAction(item.id) } />
+                        onclick={ () => props.toggleDoneAction(item.id) }
+                        type="checkbox"/>
                 <i>{ item.task }</i>
-                <i class="fa fa-times remove" aria-hidden="true" onclick="{() => props.removeTodo(item.id)}"></i>
+                <i aria-hidden="true" class="fa fa-times remove" onclick="{() => props.removeTodoAction(item.id)}"></i>
             </label>
         </li>
     </ul>
 
     <form onsubmit={ add }>
-        <input onkeyup={ edit } value={ state.task } />
+        <input onkeyup={ edit } value={ state.task }/>
         <button disabled={ !state.task }>
             Add #{ state.todos.length + 1 }
         </button>
@@ -32,7 +32,7 @@
                     task: ''
                 }
             },
-            onMounted(props, ) {
+            onMounted(props,) {
                 unsubscribe = props.subscribe((state) => {
                     this.update({
                         todos: [...state.todos]

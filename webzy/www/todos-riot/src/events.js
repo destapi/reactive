@@ -11,9 +11,8 @@ export const initialTodos = [
     {listId, id: uuidv4(), task: 'Be nice to people'}
 ]
 
-export function startTodos(todos)
-{
-    fetch(`http://localhost:9080/todos/?listId=${listId}&listName=${listName}&listOwner=${listOwner}`,{
+export function startTodos(todos) {
+    fetch(`http://localhost:9080/todos/?listId=${listId}&listName=${listName}&listOwner=${listOwner}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -26,8 +25,8 @@ export function startTodos(todos)
         })
 }
 
-export function addTodoAction(task){
-    fetch(`http://localhost:9080/todos/?action=create`,{
+export function addTodoAction(task) {
+    fetch(`http://localhost:9080/todos/?action=create`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json'
@@ -40,8 +39,8 @@ export function addTodoAction(task){
         })
 }
 
-export function toggleDoneAction(id){
-    fetch(`http://localhost:9080/todos/?action=toggle`,{
+export function toggleDoneAction(id) {
+    fetch(`http://localhost:9080/todos/?action=toggle`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json'
@@ -50,7 +49,17 @@ export function toggleDoneAction(id){
     })
         .then(res => res.json())
         .then(data => {
-            console.log("on create todo", data)
+            console.log("on toggle todo", data)
+        })
+}
+
+export function removeTodoAction(id) {
+    fetch(`http://localhost:9080/todos/?listId=${listId}&id=${id}`, {
+        method: 'DELETE',
+    })
+        .then(res => res.json())
+        .then(data => {
+            console.log("on remove todo", data)
         })
 }
 
@@ -82,12 +91,14 @@ export function startEventSource() {
         store.getState().updateTodo(data)
     });
 
-    evtSource.addEventListener('delete', event => {
-        console.log(evtSource.readyState)
+    evtSource.addEventListener('removeTask', event => {
+        console.log(event.data)
+        const data = JSON.parse(event.data);
+        store.getState().removeTodo(data.id)
     });
 
     evtSource.onerror = function (e) {
-        console.log(evtSource.readyState)
+        console.error(e)
     };
 }
 

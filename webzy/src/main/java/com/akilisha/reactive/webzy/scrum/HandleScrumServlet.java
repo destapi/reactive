@@ -61,7 +61,7 @@ public class HandleScrumServlet extends HttpServlet {
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
-        if(action.equals("vote")) {
+        if (action.equals("vote")) {
             JNode vote = JReader.parseJson(req.getInputStream());
             String scrumId = req.getParameter("scrumId");
             String screenName = vote.getItem("screenName");
@@ -99,7 +99,7 @@ public class HandleScrumServlet extends HttpServlet {
             }
         }
 
-        if(action.equals("question")){
+        if (action.equals("question")) {
             JNode que = JReader.parseJson(req.getInputStream());
             String scrumId = req.getParameter("scrumId");
             String question = que.getItem("question");

@@ -24,17 +24,20 @@ function nanoid(size = 21) {
 export const todoReducer = async (state, action) => {
     switch (action.type) {
         case ADD_ITEM:
-            return state.concat({ id: nanoid(), title: action.payload.title, completed: false });
+            return state.concat({id: nanoid(), title: action.payload.title, completed: false});
         case UPDATE_ITEM:
-            return state.map((todo) => (todo.id === action.payload.id ? { ...todo, title: action.payload.title } : todo));
+            return state.map((todo) => (todo.id === action.payload.id ? {...todo, title: action.payload.title} : todo));
         case REMOVE_ITEM:
             return state.filter((todo) => todo.id !== action.payload.id);
         case TOGGLE_ITEM:
-            return state.map((todo) => (todo.id === action.payload.id ? { ...todo, completed: !todo.completed } : todo));
+            return state.map((todo) => (todo.id === action.payload.id ? {...todo, completed: !todo.completed} : todo));
         case REMOVE_ALL_ITEMS:
             return [];
         case TOGGLE_ALL:
-            return state.map((todo) => (todo.completed !== action.payload.completed ? { ...todo, completed: action.payload.completed } : todo));
+            return state.map((todo) => (todo.completed !== action.payload.completed ? {
+                ...todo,
+                completed: action.payload.completed
+            } : todo));
         case REMOVE_COMPLETED_ITEMS:
             return state.filter((todo) => !todo.completed);
     }
@@ -59,7 +62,7 @@ export const todoReducer = async (state, action) => {
     "todos": [
     ]
 * */
-async function createTodosAction(){
+async function createTodosAction() {
     await fetch(`http://localhost:9080/todos/?listId=${listId}&listName=${listName}&listOwner=${listOwner}`, {
         method: "POST",
         headers: {'Content-Type': 'application/json'},
@@ -80,7 +83,7 @@ export async function addItemAction(title) {
     await fetch(`http://localhost:9080/todos/?action=create`, {
         method: "PUT",
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({listId, id: nanoid(), title, completed: false })
+        body: JSON.stringify({listId, id: nanoid(), title, completed: false})
     }).then(resp => resp.json())
         .then(data => {
             console.log("creating initial todos", data)
@@ -114,7 +117,7 @@ export async function startEventSource() {
     let searchParams = {};
     const regexp = /&?((\w+)=(\w+))/gm
     window.location.search.match(regexp)
-        .map(v => v.startsWith("&")? v.substring(1) : v)
+        .map(v => v.startsWith("&") ? v.substring(1) : v)
         .reduce((acc, curr) => {
             let kv = curr.split("=");
             acc[kv[0]] = kv[1];
@@ -122,8 +125,8 @@ export async function startEventSource() {
         }, searchParams);
 
     let {server, listId, listOwner, listName} = searchParams;
-    
-    if(String(server) === "true") {
+
+    if (String(server) === "true") {
         // http://127.0.0.1:8080/join/?server=true&listId=testlist&listName=fav-list&listOwner=jimmy
         const evtSource = new EventSource(`http://localhost:9080/join/?listId=${listId}&listOwner=${listOwner}&listName=${listName}`, {
             withCredentials: false

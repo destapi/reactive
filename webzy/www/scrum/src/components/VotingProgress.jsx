@@ -26,8 +26,8 @@ function MemberVote({scrumId, progress, choice, screenName}) {
                                            onClick={() => removeMemberAction({scrumId, screenName})}></i></p>
             </div>
             <p className="vote">
-                {!revealed() && !current() && <i className="fa fa-question-circle-o" aria-hidden="true"></i> }
-                {!revealed() && current() && <i class="fa fa-check" aria-hidden="true"></i> }
+                {!revealed() && !current() && <i className="fa fa-question-circle-o" aria-hidden="true"></i>}
+                {!revealed() && current() && <i class="fa fa-check" aria-hidden="true"></i>}
                 {revealed() && current()}
             </p>
         </article>

@@ -17,7 +17,8 @@ export default function OrganizerForm() {
                 <fieldset className="pure-group">
                     <label>
                     <textarea className="pure-input-1-2" name="voteChoices"
-                              placeholder="Add choices, comma-seperated or one line per choice" value="1,2,3,4"></textarea>
+                              placeholder="Add choices, comma-seperated or one line per choice"
+                              value="1,2,3,4"></textarea>
                     </label>
                 </fieldset>
                 <button className="pure-button pure-input-1-2 pure-button-primary" type="submit">Organize</button>

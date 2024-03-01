@@ -3,13 +3,15 @@
         <div class="logo"><i aria-hidden="true" class="fa fa-cogs"></i></div>
         <div class="title">Scrum's Up</div>
         <label class="pure-checkbox" for="organizer">
-            <input checked={props.userType === "organizer"} id="organizer" name="user-type" onclick="{this.onToggleUser}"
+            <input checked={props.userType === "organizer"} id="organizer" name="user-type"
+                   onclick="{this.onToggleUser}"
                    type="radio"
                    value="organizer"/>
             Scrum Master
         </label>
         <label class="pure-checkbox" for="participant">
-            <input checked={props.userType === "participant"} id="participant" name="user-type" onclick="{this.onToggleUser}"
+            <input checked={props.userType === "participant"} id="participant" name="user-type"
+                   onclick="{this.onToggleUser}"
                    type="radio"
                    value="participant"/>
             Participant

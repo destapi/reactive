@@ -1,16 +1,16 @@
-import { useMemo } from "react";
-import { useLocation } from "react-router-dom";
+import {useMemo} from "react";
+import {useLocation} from "react-router-dom";
 import classnames from "classnames";
 
-import { REMOVE_COMPLETED_ITEMS } from "../constants";
+import {REMOVE_COMPLETED_ITEMS} from "../constants";
 import {removeCompletedAction} from "../store";
 
-export function Footer({ todos, dispatch }) {
-    const { pathname: route } = useLocation();
+export function Footer({todos, dispatch}) {
+    const {pathname: route} = useLocation();
 
     const activeTodos = useMemo(() => todos.filter((todo) => !todo.completed), [todos]);
 
-    const removeCompleted = () => removeCompletedAction({ type: REMOVE_COMPLETED_ITEMS });
+    const removeCompleted = () => removeCompletedAction({type: REMOVE_COMPLETED_ITEMS});
 
     // prettier-ignore
     if (todos.length === 0)
@@ -18,25 +18,27 @@ export function Footer({ todos, dispatch }) {
 
     return (
         <footer className="footer" data-testid="footer">
-            <span className="todo-count">{`${activeTodos.length} ${activeTodos.length === 1 ? "item" : "items"} left!`}</span>
+            <span
+                className="todo-count">{`${activeTodos.length} ${activeTodos.length === 1 ? "item" : "items"} left!`}</span>
             <ul className="filters" data-testid="footer-navigation">
                 <li>
-                    <a className={classnames({ selected: route === "/" })} href="#/">
+                    <a className={classnames({selected: route === "/"})} href="#/">
                         All
                     </a>
                 </li>
                 <li>
-                    <a className={classnames({ selected: route === "/active" })} href="#/active">
+                    <a className={classnames({selected: route === "/active"})} href="#/active">
                         Active
                     </a>
                 </li>
                 <li>
-                    <a className={classnames({ selected: route === "/completed" })} href="#/completed">
+                    <a className={classnames({selected: route === "/completed"})} href="#/completed">
                         Completed
                     </a>
                 </li>
             </ul>
-            <button className="clear-completed" disabled={activeTodos.length === todos.length} onClick={removeCompleted}>
+            <button className="clear-completed" disabled={activeTodos.length === todos.length}
+                    onClick={removeCompleted}>
                 Clear completed
             </button>
         </footer>

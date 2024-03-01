@@ -82,7 +82,7 @@ public class HandleTodosServlet extends HttpServlet {
                     String id = update.getItem("id");
                     todos.replaceItem(node -> {
                         if (node.getItem("id").equals(id)) {
-                            node.putItem("completed", Optional.ofNullable(node.getItem("completed")).map(bool -> !(boolean)bool).orElse(true)); // this will trigger client update event
+                            node.putItem("completed", Optional.ofNullable(node.getItem("completed")).map(bool -> !(boolean) bool).orElse(true)); // this will trigger client update event
                             return true;
                         }
                         return false;
@@ -145,35 +145,32 @@ public class HandleTodosServlet extends HttpServlet {
      * */
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String task = req.getParameter("task");
+        String taskId = req.getParameter("id");
         String listId = req.getParameter("listId");
-        String filter = req.getParameter("completed");
 
         try {
             JNode todoList = MockTodos.get(listId);
             if (todoList != null) {
-                if (task != null) {
+                if (taskId != null) {
                     JArray todos = todoList.getItem("todos");
-                    todos.removeFirst(node -> node.getItem("task").equals(task)); // this will trigger client update event
+                    todos.removeFirst(node -> node.getItem("id").equals(taskId)); // this will trigger client update event
+
+                    JNode ok = new JObject();
+                    ok.putItem("status", "ok");
+
+                    //prepare response
+                    resp.setStatus(202);
+                    resp.setHeader("Content-Type", "application/json");
+                    resp.getWriter().write(JWriter.stringify(ok));
+                } else {
+                    JNode error = new JObject();
+                    error.putItem("message", String.format("Task by id %s does not exist", taskId));
+
+                    //prepare response
+                    resp.setStatus(403);
+                    resp.setHeader("Content-Type", "application/json");
+                    resp.getWriter().write(JWriter.stringify(error));
                 }
-
-                if (filter != null && filter.equalsIgnoreCase("all")) {
-                    JArray todos = todoList.getItem("todos");
-                    todos.removeAll(); // this will trigger client update event
-                }
-
-                if (filter != null && filter.equalsIgnoreCase("completed")) {
-                    JArray todos = todoList.getItem("todos");
-                    todos.removeAny(t -> t.getItem("completed").equals(true)); // this will trigger client update event
-                }
-
-                JNode ok = new JObject();
-                ok.putItem("status", "ok");
-
-                //prepare response
-                resp.setStatus(202);
-                resp.setHeader("Content-Type", "application/json");
-                resp.getWriter().write(JWriter.stringify(ok));
             } else {
                 JNode error = new JObject();
                 error.putItem("message", String.format("Todo list by id %s does not exist", listId));

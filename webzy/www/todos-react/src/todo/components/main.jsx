@@ -1,14 +1,14 @@
-import { useMemo } from "react";
-import { useLocation } from "react-router-dom";
+import {useMemo} from "react";
+import {useLocation} from "react-router-dom";
 
-import { Item } from "./item";
+import {Item} from "./item";
 import classnames from "classnames";
 
-import { TOGGLE_ALL } from "../constants";
+import {TOGGLE_ALL} from "../constants";
 import {toggleAllAction} from "../store";
 
-export function Main({ todos, dispatch }) {
-    const { pathname: route } = useLocation();
+export function Main({todos, dispatch}) {
+    const {pathname: route} = useLocation();
 
     const visibleTodos = useMemo(
         () =>
@@ -24,13 +24,14 @@ export function Main({ todos, dispatch }) {
         [todos, route]
     );
 
-    const toggleAll = (e) => toggleAllAction({ type: TOGGLE_ALL, payload: { completed: e.target.checked } });
+    const toggleAll = (e) => toggleAllAction({type: TOGGLE_ALL, payload: {completed: e.target.checked}});
 
     return (
         <main className="main" data-testid="main">
             {visibleTodos.length > 0 ? (
                 <div className="toggle-all-container">
-                    <input className="toggle-all" type="checkbox" data-testid="toggle-all" checked={visibleTodos.every((todo) => todo.completed)} onChange={toggleAll} />
+                    <input className="toggle-all" type="checkbox" data-testid="toggle-all"
+                           checked={visibleTodos.every((todo) => todo.completed)} onChange={toggleAll}/>
                     <label className="toggle-all-label" htmlFor="toggle-all">
                         Toggle All Input
                     </label>
@@ -38,7 +39,7 @@ export function Main({ todos, dispatch }) {
             ) : null}
             <ul className={classnames("todo-list")} data-testid="todo-list">
                 {visibleTodos.map((todo, index) => (
-                    <Item todo={todo} key={todo.id} dispatch={dispatch} index={index} />
+                    <Item todo={todo} key={todo.id} dispatch={dispatch} index={index}/>
                 ))}
             </ul>
         </main>

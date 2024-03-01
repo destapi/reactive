@@ -18,7 +18,7 @@ export default function OrganizerPage() {
 
     return (
         <>
-            {!screenName() && <OrganizerForm />}
+            {!screenName() && <OrganizerForm/>}
             {screenName() && <QuestionForm screenName={screenName} scrumId={scrumId}/>}
             {screenName() && <VotingProgress/>}
         </>

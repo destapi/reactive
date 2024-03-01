@@ -67,9 +67,9 @@ public class ScrumObserver implements Observer {
     @Override
     public void delete(Object target, String path, String key, Object value) {
         if (path.equals(".members")) {
-            write( "leaveScrum", JWriter.stringify(value));
+            write("leaveScrum", JWriter.stringify(value));
         } else if (path.equals(".voting")) {
-            write( "leaveVoting", JWriter.stringify(value));
+            write("leaveVoting", JWriter.stringify(value));
         } else {
             System.out.printf("Removing value [%s] %s with key %s\n", path, key, value);
         }

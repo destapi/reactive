@@ -108,7 +108,7 @@ class TodoListObserverTest {
 
         //complete a task
         ((JNode) todoListNode.getItem("todos")).replaceItem((node -> {
-            if(node.getItem("task").equals("Write a memo")){
+            if (node.getItem("task").equals("Write a memo")) {
                 node.putItem("completed", true);
                 return true;
             }
