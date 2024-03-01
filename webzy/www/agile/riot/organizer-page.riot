@@ -1,0 +1,17 @@
+<organizer-page>
+    <organizer-form if={!props.screenName}/>
+    <vote-question-form if={props.screenName}/>
+    <voting-in-progress if={props.screenName} members="{props.members}" votes="{props.votes}"/>
+
+    <script>
+        export default {
+            onBeforeMount(props, state) {
+                this.state = {
+                    ...state,
+                    initialScrum: props.initialScrum,
+                }
+                console.log('Organizer page will be mounted')
+            },
+        }
+    </script>
+</organizer-page>

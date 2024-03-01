@@ -1,0 +1,31 @@
+<voting-in-progress>
+    <section class="flex-row" id="voting-progress">
+        <article class="pure-u-1-4" each="{ member in Object.entries(this.state.members) }" member { }>
+            <p class="controls"><i aria-hidden="true" class="fa fa-times-circle"></i></p>
+            <p class="vote">{member.screenName}</p>
+        </article>
+    </section>
+
+    <script>
+        import {store} from '../src/store';
+
+        const {getState, setState, subscribe} = store;
+
+        let unsubscribe;
+        export default {
+            onMounted() {
+                unsubscribe = subscribe((state) => {
+                    this.update({
+                        members: state.scrum.members,
+                        votes: state.scrum.voting,
+                    });
+                    console.log('updating Voting-in-progress component')
+                });
+            },
+
+            onBeforeUnmount() {
+                unsubscribe()
+            },
+        }
+    </script>
+</voting-in-progress>

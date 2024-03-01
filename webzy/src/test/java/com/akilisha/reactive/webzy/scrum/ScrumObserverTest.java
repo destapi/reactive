@@ -25,14 +25,15 @@ class ScrumObserverTest {
     @Mock
     PrintWriter writer;
     String scrumId = "1001";
+    String screenName = "member1";
     Member organizer = new Member();
 
     private JNode mockScrum() throws IOException {
         Scrum scrum = new Scrum();
         scrum.setScrumId(scrumId);
         scrum.setChoices(List.of("1", "2", "3", "5", "8"));
+        organizer.setScreenName(screenName);
         scrum.setMember(organizer);
-        scrum.setMemberType(Scrum.MemberType.organizer);
         scrum.setTitle("Morning drive");
 
         // nodify, stringify and then parse to apply path value (in actual usage scenarios, input will almost always come in as a string)
@@ -84,7 +85,7 @@ class ScrumObserverTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        obs.getWriters().put(scrumId, writer);
+        obs.addConnection(scrumId, screenName, writer);
         organizer.setScreenName("jimmy");
         organizer.setScrumId(scrumId);
     }

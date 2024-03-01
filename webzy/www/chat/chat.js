@@ -29,7 +29,7 @@ const emptyUser = {
 
 let userType = "organizer"
 
-function toggleUserType(e) {
+function onToggleUserType(e) {
     userType = (e.value);
     document.getElementById("organizer").classList.toggle("hidden")
     document.getElementById("participant").classList.toggle("hidden")

@@ -13,26 +13,26 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class MockFolks {
 
-    public static final Map<String, Member> ps = new ConcurrentHashMap<>();
+    public static final Map<String, Member> members = new ConcurrentHashMap<>();
 
     static {
-        ps.put("jimmy", new Member(null, "jimmy", "jimmy@gmail.com", "chester", "WV"));
-        ps.put("kathy", new Member(null, "kathy", "kathy@gmail.com", "dearborn", "MI"));
-        ps.put("simba", new Member(null, "simba", "simba@gmail.com", "forthworth", "TX"));
-        ps.put("kadzo", new Member(null, "kadzo", "jimmy@gmail.com", "san pedro", "CA"));
-        ps.put("machi", new Member(null, "machi", "machi@gmail.com", "des moines", "IA"));
+        members.put("jimmy", new Member(null, "jimmy", "jimmy@gmail.com", "chester", "WV"));
+        members.put("kathy", new Member(null, "kathy", "kathy@gmail.com", "dearborn", "MI"));
+        members.put("simba", new Member(null, "simba", "simba@gmail.com", "forthworth", "TX"));
+        members.put("kadzo", new Member(null, "kadzo", "jimmy@gmail.com", "san pedro", "CA"));
+        members.put("machi", new Member(null, "machi", "machi@gmail.com", "des moines", "IA"));
     }
 
     private MockFolks() {
     }
 
     public static Member get(String name) {
-        return ps.get(name);
+        return members.get(name);
     }
 
 
     public static boolean containsKey(String key) {
-        return ps.containsKey(key);
+        return members.containsKey(key);
     }
 
     public static void main(String[] args) throws IOException {
@@ -40,7 +40,7 @@ public class MockFolks {
         Scrum scrum = new Scrum(
                 scrumId,
                 "The good scrum",
-                ps.get("jimmy"),
+                members.get("jimmy"),
                 LocalDateTime.now(),
                 "What is the time now",
                 Map.of("jimmy", new Member(scrumId, "jimmy", "jimmyb@gmail.com", "Madison", "WI")),

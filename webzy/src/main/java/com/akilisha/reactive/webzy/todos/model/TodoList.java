@@ -19,6 +19,6 @@ public class TodoList {
     String listName;
     Member listOwner;
     LocalDateTime dateCreated;
-    Map<String, Member> members = new LinkedHashMap<>();
+    Map<String, Member> sharedTo = new LinkedHashMap<>();
     List<Todo> todos = new LinkedList<>();
 }

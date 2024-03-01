@@ -1,0 +1,68 @@
+<app-landing-page>
+    <navigation-bar sticky="{state.sticky}"
+                    userType={state.userType}/>
+    <organizer-page createScrumAction="{props.createScrumAction}"
+                    getState="{props.getState}"
+                    if={state.userType === "organizer"}
+                    initialScrum="{props.initialScrum}"
+                    members="{state.members}"
+                    screenName="{state.screenName}"
+                    setState="{props.setState}"
+                    startEventSource="{props.startEventSource}"
+                    subscribe="{props.subscribe}"
+                    votes="{state.votes}"/>
+    <participant-page choice="{state.choice}"
+                      choices="{state.choices}"
+                      emptyUser="{props.emptyUser}"
+                      getState="{props.getState}"
+                      if={state.userType === "participant"}
+                      joinScrumAction="{props.joinScrumAction}"
+                      screenName="{state.screenName}"
+                      scrumId="{state.scrumId}"
+                      setState="{props.setState}"
+                      startEventSource="{props.startEventSource}"
+                      started="{state.started}"
+                      submitVoteAction="{props.submitVoteAction}"
+                      subscribe="{props.subscribe}"/>
+
+    <script>
+        let unsubscribe;
+
+        export default {
+            onBeforeMount(props, state) {
+                this.state = {
+                    ...state,
+                    scrumId: props.getState().scrum.scrumId,
+                    started: props.getState().progress.started,
+                    userType: props.getState().progress.userType,
+                    sticky: props.getState().progress.sticky,
+                    screenName: props.getState().scrum.member?.screenName,
+                    choices: props.getState().scrum.choices,
+                    choice: props.getState().progress.vote.choice,
+                    members: props.getState().scrum.members,
+                    votes: props.getState().scrum.voting,
+                }
+                console.log('Landing page will be mounted')
+            },
+
+            onMounted() {
+                unsubscribe = this.props.subscribe((state) => {
+                    this.update({
+                        started: state.progress.started,
+                        userType: state.progress.userType,
+                        screenName: state.scrum.member?.screenName,
+                        choices: state.scrum.choices,
+                        choice: state.progress.vote.choice,
+                        members: state.scrum.members,
+                        votes: state.scrum.voting,
+                    });
+                    console.log('updating Landing page')
+                });
+            },
+
+            onBeforeUnmount() {
+                unsubscribe()
+            },
+        }
+    </script>
+</app-landing-page>

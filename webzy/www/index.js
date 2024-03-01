@@ -43,9 +43,9 @@ function startEventSource() {
     };
 }
 
-startEventSource();
+// startEventSource();
 
-startWebSocket();
+// startWebSocket();
 
 function startWebSocket() {
     // Create a WebSocket connection.

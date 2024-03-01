@@ -12,11 +12,11 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
-public class ChatServlet extends HttpServlet {
+public class HandleChatServlet extends HttpServlet {
 
     private final ChatObserver observer;
 
-    public ChatServlet(ChatObserver observer) {
+    public HandleChatServlet(ChatObserver observer) {
         this.observer = observer;
     }
 

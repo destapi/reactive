@@ -4,16 +4,36 @@ import com.akilisha.reactive.json.JNode;
 import com.akilisha.reactive.json.JObject;
 import com.akilisha.reactive.json.JWriter;
 import com.akilisha.reactive.json.Observer;
-import lombok.Getter;
 
 import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Getter
 public class ScrumObserver implements Observer {
 
-    private final Map<String, PrintWriter> writers = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, PrintWriter>> writers = new ConcurrentHashMap<>();
+
+    public void addConnection(String scrumId, String screenName, PrintWriter out) {
+        if (!writers.containsKey(scrumId)) {
+            writers.put(scrumId, new HashMap<>());
+        }
+        if (writers.get(scrumId).containsKey(screenName)) {
+            PrintWriter existing = (PrintWriter) writers.get(scrumId);
+            existing.close();
+        }
+        //save new writer
+        writers.get(scrumId).put(screenName, out);
+    }
+
+    public void dropConnection(String scrumId, String screenName) {
+        if (writers.containsKey(scrumId)) {
+            if (writers.get(scrumId).containsKey(screenName)) {
+                PrintWriter existing = (PrintWriter) writers.get(scrumId);
+                existing.close();
+            }
+        }
+    }
 
     @Override
     public void set(Object target, String path, String key, Object oldValue, Object newValue) {
@@ -47,8 +67,9 @@ public class ScrumObserver implements Observer {
     @Override
     public void delete(Object target, String path, String key, Object value) {
         if (path.equals(".members")) {
-            String scrumId = ((JNode) value).getItem("scrumId");
-            write(scrumId, "leaveScrum", JWriter.stringify(value));
+            write( "leaveScrum", JWriter.stringify(value));
+        } else if (path.equals(".voting")) {
+            write( "leaveVoting", JWriter.stringify(value));
         } else {
             System.out.printf("Removing value [%s] %s with key %s\n", path, key, value);
         }
@@ -62,9 +83,9 @@ public class ScrumObserver implements Observer {
     @Override
     public void write(String target, String event, String data) {
         if (!writers.isEmpty()) {
-            for (String key : writers.keySet()) {
-                if (key.startsWith(target)) {
-                    PrintWriter writer = writers.get(key);
+            if (writers.containsKey(target)) {
+                for (String key : writers.get(target).keySet()) {
+                    PrintWriter writer = writers.get(target).get(key);
                     if (event != null && !event.trim().isEmpty()) {
                         writer.write(String.format("event: %s\n", event));
                     }

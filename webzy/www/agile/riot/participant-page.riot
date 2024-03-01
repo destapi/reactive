@@ -1,0 +1,55 @@
+<participant-page>
+    <participant-form if={!props.started}
+                      joinScrumByScrumId="{joinScrumByScrumId}"/>
+    <choices-available choice="{props.choice}"
+                       choices="{props.choices}"
+                       if={props.screenName}
+                       onSelectChoice={onSelectChoice}/>
+
+    <script>
+        export default {
+            onBeforeMount(props, state) {
+                this.state = {
+                    ...state,
+                }
+                console.log('Participant page will be mounted')
+            },
+
+            async onSelectChoice(choice) {
+                const state = this.props.getState();
+                this.props.setState({...state, progress: {...state.progress, vote: {...state.progress.vote, choice}}});
+
+                this.props.submitVoteAction({
+                    scrumId: this.props.scrumId,
+                    screenName: this.props.screenName,
+                    choice
+                }, function (data) {
+                    console.log(JSON.stringify(data))
+                }.bind(this))
+                    .catch(err => {
+                        console.log(err.message + "\nDo something more useful than just logging the error");
+                    });
+            },
+
+            async joinScrumByScrumId(e) {
+                e.preventDefault();
+
+                const formData = new FormData(e.target);
+
+                const scrumId = formData.get("scrumId");
+                const screenName = formData.get("screenName");
+
+                const joinScrum = this.props.emptyUser();
+                joinScrum.scrumId = scrumId;
+                joinScrum.screenName = screenName;
+
+                this.props.joinScrumAction(joinScrum, function ({scrumId, screenName}) {
+                    this.props.startEventSource(scrumId, screenName)
+                }.bind(this))
+                    .catch(err => {
+                        console.log(err.message + "\nDo something more useful than just logging the error");
+                    });
+            }
+        }
+    </script>
+</participant-page>

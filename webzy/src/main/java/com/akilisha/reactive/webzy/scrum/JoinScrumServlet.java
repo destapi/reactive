@@ -39,7 +39,7 @@ public class JoinScrumServlet extends HttpServlet {
                 resp.setStatus(200);
                 try {
                     PrintWriter out = resp.getWriter();
-                    observer.getWriters().put(scrumId, out);
+                    observer.addConnection(scrumId, screenName, out);
                     ScrumMessage message = new ScrumMessage(scrumId, "System", String.format("%s has joined scrum", screenName), LocalDateTime.now());
                     JNode node = JClass.nodify(message);
                     observer.write(scrumId, JWriter.stringify(node).replaceAll("\\n", ""));
@@ -69,9 +69,14 @@ public class JoinScrumServlet extends HttpServlet {
             participants.putItem(screenName, node);
 
             //prepare response
+            JNode body = new JObject();
+            body.putItem("scrumId", scrumId);
+            body.putItem("title", scrum.getItem("title"));
+            body.putItem("choices", scrum.getItem("choices"));
+            body.putItem("member", node);
             resp.setStatus(201);
             resp.setContentType("application/json");
-            resp.getWriter().write(JWriter.stringify(node));
+            resp.getWriter().write(JWriter.stringify(body));
         } else {
             JNode error = new JObject();
             error.putItem("message", String.format("User %s does not exist", screenName));
@@ -81,5 +86,30 @@ public class JoinScrumServlet extends HttpServlet {
             resp.setHeader("Content-Type", "application/json");
             resp.getWriter().write(JWriter.stringify(error));
         }
+    }
+
+    /*
+     * exit ongoing scrum
+     * */
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String scrumId = req.getParameter("scrumId");
+        String screenName = req.getParameter("screenName");
+
+        //remove member
+        JNode scrum = MockTodos.get(scrumId);
+        ((JNode) scrum.getItem("members")).removeItem(screenName);
+        ((JNode) scrum.getItem("voting")).removeItem(screenName);
+
+        //drop connection
+        observer.dropConnection(scrumId, screenName);
+
+        JNode node = new JObject();
+        node.putItem("status", "ok");
+
+        //prepare response
+        resp.setStatus(200);
+        resp.setHeader("Content-Type", "application/json");
+        resp.getWriter().write(JWriter.stringify(node));
     }
 }

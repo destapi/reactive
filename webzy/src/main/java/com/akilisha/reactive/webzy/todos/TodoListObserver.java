@@ -6,6 +6,7 @@ import com.akilisha.reactive.json.Observer;
 import lombok.Getter;
 
 import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,14 +14,32 @@ import java.util.concurrent.ConcurrentHashMap;
 @Getter
 public class TodoListObserver implements Observer {
 
-    private final Map<String, PrintWriter> writers = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, PrintWriter>> writers = new ConcurrentHashMap<>();
+
+    public void addConnection(String listId, String listOwner, PrintWriter out) {
+        if (!writers.containsKey(listId)) {
+            writers.put(listId, new HashMap<>());
+        }
+        if (writers.get(listId).containsKey(listOwner)) {
+            PrintWriter existing = (PrintWriter) writers.get(listId);
+            existing.close();
+        }
+        //save a new writer
+        writers.get(listId).put(listOwner, out);
+    }
+
+    public void dropConnection(String listId, String listOwner) {
+        if (writers.containsKey(listId)) {
+            if (writers.get(listId).containsKey(listOwner)) {
+                PrintWriter existing = (PrintWriter) writers.get(listId);
+                existing.close();
+            }
+        }
+    }
 
     @Override
     public void set(Object target, String path, String key, Object oldValue, Object newValue) {
-        if (path.equals(".todos[]")) {
-            String listId = ((JNode) target).getItem("listId");
-            write(listId, "updateTask", String.format("{\"%s\": \"%s\"}", key, Objects.requireNonNull(newValue)));
-        } else if (path.equals(".sharedTo")) {
+        if (path.equals(".sharedTo")) {
             String listId = ((JNode) newValue).getItem("listId");
             write(listId, "addShare", JWriter.stringify(Objects.requireNonNull(newValue)));
         } else if (path.isBlank()) {
@@ -32,22 +51,20 @@ public class TodoListObserver implements Observer {
     }
 
     @Override
+    public void replace(Object target, String path, Object value) {
+        if (path.equals(".todos")) {
+            String listId = ((JNode) value).getItem("listId");
+            write(listId, "updateTask", JWriter.stringify(Objects.requireNonNull(value)));
+        }
+    }
+
+    @Override
     public void add(Object target, String path, Object value) {
         if (path.equals(".todos")) {
             String listId = ((JNode) value).getItem("listId");
             write(listId, "newTask", JWriter.stringify(Objects.requireNonNull(value)));
         } else {
             System.out.printf("Adding %s value %s to list\n", path, value);
-        }
-    }
-
-    @Override
-    public void delete(Object target, String path, int index, Object value) {
-        if (path.equals(".todos")) {
-            String listId = ((JNode) value).getItem("listId");
-            write(listId, "removeTask", JWriter.stringify(Objects.requireNonNull(value)));
-        } else {
-            System.out.printf("removing (%d) item %s from list %s\n", index, value, path);
         }
     }
 
@@ -78,10 +95,10 @@ public class TodoListObserver implements Observer {
 
     @Override
     public void write(String target, String event, String data) {
-        if (!writers.isEmpty() && data != null && !data.isEmpty()) {
-            for (String key : writers.keySet()) {
-                if (key.startsWith(target)) {
-                    PrintWriter writer = writers.get(key);
+        if (!writers.isEmpty()) {
+            if (writers.containsKey(target)) {
+                for (String key : writers.get(target).keySet()) {
+                    PrintWriter writer = writers.get(target).get(key);
                     if (event != null && !event.trim().isEmpty()) {
                         writer.write(String.format("event: %s\n", event));
                     }

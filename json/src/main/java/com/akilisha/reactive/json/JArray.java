@@ -2,6 +2,7 @@ package com.akilisha.reactive.json;
 
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class JArray extends LinkedList<Object> implements JNode {
@@ -68,6 +69,32 @@ public class JArray extends LinkedList<Object> implements JNode {
     }
 
     @Override
+    public <E> E replaceItem(int index, Consumer<JNode> consumer) {
+        Object value = get(index);
+        consumer.accept((JNode) value);
+        Observer rootObserver = this.root().getObserver();
+        if (rootObserver != null) {
+            rootObserver.replace(this, this.tracePath(), index, value);
+        }
+        return (E) value;
+    }
+
+    @Override
+    public <E> E replaceItem(Function<JNode, Boolean> predicate) {
+        for (Iterator<Object> iter = this.iterator(); iter.hasNext(); ) {
+            JNode node = (JNode) iter.next();
+            if (predicate.apply(node)) {
+                Observer rootObserver = this.root().getObserver();
+                if (rootObserver != null) {
+                    rootObserver.replace(this, this.tracePath(), node);
+                }
+                return (E) node;
+            }
+        }
+        return null;
+    }
+
+    @Override
     public void removeItem(int index) {
         Object value = remove(index);
         Observer rootObserver = this.root().getObserver();
@@ -85,7 +112,21 @@ public class JArray extends LinkedList<Object> implements JNode {
     }
 
     @Override
-    public void removeWhere(Function<JNode, Boolean> predicate) {
+    public void removeAny(Function<JNode, Boolean> predicate) {
+        for (Iterator<Object> iter = this.iterator(); iter.hasNext(); ) {
+            JNode taskNode = (JNode) iter.next();
+            if (predicate.apply(taskNode)) {
+                iter.remove();
+                Observer rootObserver = this.root().getObserver();
+                if (rootObserver != null) {
+                    rootObserver.delete(this, this.tracePath(), taskNode);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void removeFirst(Function<JNode, Boolean> predicate) {
         for (Iterator<Object> iter = this.iterator(); iter.hasNext(); ) {
             JNode taskNode = (JNode) iter.next();
             if (predicate.apply(taskNode)) {

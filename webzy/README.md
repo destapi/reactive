@@ -1,872 +1,253 @@
-# Building on the existing knowledge
+# Declarative State Change Transfer (DeSt)
 
-## Phase 1
+## PART I - The Specification
 
-Bootstrap a barebone server, with just a tcp connector and a resource handler
+Software Engineering is very much a science because it is built upon principles from mathematics, algorithms and abstract data types. 
+Software Architecture however, is more of an art than it is a science, and this skill only gets sharper with repeated problem-solving, 
+experience and passage of time. The important takeaway here is that having refined skills in software architecture helps in identifying 
+solutions and patterns in places where a casual observer or a novice apprentice would fail to easily make those subtle connections. This 
+perspective of software architecture becomes even more significant when you have to deal with problems in a domain where creating any 
+sound solutions requires introducing non-trivial complexities, since any other seemingly plausible solutions would be either too naive
+or would quickly fall apart. The architectural choices for such solutions involves making design decisions that produce the least amount
+of "hurt", and require continually reevaluating and moving the goal posts to find that sweet spot.
 
-```java
-public static Server createServer(int port) {
-    Server server = new Server();
-    HttpConfiguration httpConfig = new HttpConfiguration();
-    httpConfig.setSendServerVersion(false);
-    HttpConnectionFactory http11 = new HttpConnectionFactory(httpConfig);
-    try (ServerConnector connector = new ServerConnector(server, http11)) {
-        connector.setPort(port);
-        server.setConnectors(new Connector[]{connector});
-    }
-    return server;
-}
-```
+Consider the case of communication between processes in disparate computers. There are different techniques that have been developed 
+over time to solve this problem, and the over-arching design is generally known as the client-server architecture. In this architecture, 
+any two computers are physically seperated from each other, and the only link between them is an ethernet connection and the TCP/UDP 
+communication protocol for exchanging data. This solution, albeit universally adopted and successful, also has significant challenges 
+that it has to overcome, and these challenges are very well articulated in the [CAP theorem](https://en.wikipedia.org/wiki/CAP_theorem). 
 
-Create a barebone servlet
+The client-server architecture addresses the problem of shuffling data between two processes across a network. However, it does not 
+concern itself with making sense of what that data it. This concern is addressed in protocols higher up the TCP/IP protocol stack. 
+Originally, the RPC protocol was developed and used to describe the semantics around the transmission of data between a caller and 
+the callee. Following its success, more ambitious and rigid protocols like SOAP were developed to introduce a more formal nomenclature
+for the data semantics, with nouns such as SOAP Envelop, Headers and Body. Despite its king-size promise, the bloat of SOAP eventually
+led to its demise, with more lightweight architectural styles like REST, GraphQL and gRPC stealing the show. Why are there different
+styles? Are they all trying to solve the same problem? Have they been successful in meeting their objectives? These are all questions
+that may not necessarily preoccupy everyone, but are nonetheless important to reflect upon to understand the "now" and also the 
+"what is next". __DeSt__ is a fresh look at the same problem of data and a proposal for the semantics of the structure and transmission 
+of this data.
 
-```java
-public class SessionDemo extends HttpServlet {
+## Lightweight architectural styles
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        resp.setStatus(200);
-        resp.getWriter().println("success");
-    }
-}
-```
+To understand a problem thoroughly, it is important to tailor a solution that attacks each salient issues explicitly, and to do so 
+imperatively so that "no stone is left unturned". It's only from creating such an exhaustive solution that finer conclusions can 
+then start to be drawn and patterns can also start to emerge. This is the gift which RPC gave to the computing universe - an 
+iron-clad formalization for the exchange of data between two processes on different computers. But in the present day, there are 
+more ubiquitous architectural styles which will be the target of scrutiny here. In the discussions below, there are two salient 
+threads under scrutiny at all times, which form the guiding principles
+1. The mechanics of data transfer
+2. The treatment of the data in transit
 
-Fire up the server and verify that the Servlet is reachable
+### REST (REpresentational State Transfer)
 
-```java
-public static void main(String[] args) throws Exception {
-    int port = 9080;
-    String resourceRoot = "C:\\Projects\\java\\reactive\\webzy\\www";
-    Server server = createServer(port);
+REST is an architectural style which leans heavily on the already existing semantics of the web (HTTP protocol) to describe the 
+mechanics of how data transmission happens between two computers (HTTP methods) and what shape the data in transit takes. REST
+is predominantly used alongside JSON as the structural format for the data in transit, although it may be used with other formats 
+like XML. REST rose to prominence around the time when the web was heavily saddled and weighed down by SOAP, especially in the 
+enterprise space. The goals of SOAP may have been noble, but the implementation details were a new kind of hell. REST stripped 
+out all the baggage associated with describing the data payload and transmission mechanics and added _nothing_ new to what the 
+HTTP protocol already provided. REST simply formalized the HTTP nomenclature to describe the mechanics of transmitting the data 
+and the semantics of the data format while in transit. It was an instant hit, and very deservedly so. 
 
-    // servlet resource context handler
-    ServletContextHandler context = new ServletContextHandler();
-    context.setContextPath("/");
-    context.setBaseResource(Resource.newResource(resourceRoot));
-    context.setWelcomeFiles(new String[]{"index.html"});
+However, with REST, signs of discomfort will quickly begin to manifest as the size of the backend data grows bigger, and as 
+relationships existing in this data continue to increase in their complexity (level of coupling). This phenomenon quickly begins 
+to push on the limitations of REST, where requesting one piece of data may require making many more requests for other data 
+before the actual target is finally discovered and retrieved. This can quickly eat up the network bandwidth by transmitting 
+data which the client does not need at all and will inevitably, and almost always, severely degrade performance.
 
-    // add and configure default servlet
-    ServletHolder defaultHolder = context.addServlet(DefaultServlet.class, "/");
-    defaultHolder.setInitParameter("dirAllowed", "false");
-    defaultHolder.setInitParameter("gzip", "true");
+### gRPC (Google RPC)
 
-    // add demo servlet
-    ServletHolder sessionHolder = context.addServlet(SessionDemo.class, "/sess");
-    sessionHolder.setInitParameter("sessionDir", sessionDir.toString());
+There are other variations of RPC, but for this discussion, gRPC will suffice. gRPC pivots back to the traditional RPC way of 
+describing intent using verbs, but it takes a sharp turn in how it treats the data in transit. Since it does not rely on the 
+HTTP protocol, it is not restricted to the same rules as say, _REST_. It defines the mechanics of transmitting data (ProtoBuff), 
+which a client must be familiar with to successfully decode and use this data. The data is also aggressively compressed and very 
+efficiently transmitted, which makes gRPC an ideal architectural style for service-to-service API that do not require an
+HTTP interface.
 
-    // start server
-    server.setHandler(context);
-    server.start();
-}
-```
+### GraphQL
 
-Fire up a _curl_ request
-
-```bash
-curl http://localhost:9080/sess
-
-#output
-success
-```
-
-The next step will be to configure the session handler.
-
-Configure a session id manager
-
-```java
-public static SessionIdManager configureSessionIdManager(Server server) throws Exception {
-    //There is a maximum of one SessionIdManager per Server instance.
-    DefaultSessionIdManager idMgr = new DefaultSessionIdManager(server);
-    idMgr.setWorkerName("webzy-worker" + LocalDateTime.now().getSecond());
-    server.setSessionIdManager(idMgr);
-
-    //There is a maximum of one HouseKeeper per SessionIdManager
-    HouseKeeper houseKeeper = new HouseKeeper();
-    houseKeeper.setSessionIdManager(idMgr);
-    //set the frequency of scavenging cycles
-    houseKeeper.setIntervalSec(600L);
-    idMgr.setSessionHouseKeeper(houseKeeper);
-    return idMgr;
-}
-```
-
-Configure a session cache factory
-
-```java
-public static DefaultSessionCacheFactory addDefaultSessionCacheFactory(Server server) {
-    // There is one SessionCache per SessionHandler, and thus one per context.
-    DefaultSessionCacheFactory cacheFactory = new DefaultSessionCacheFactory();
-    //EVICT_ON_INACTIVE: evict a sess after 60sec inactivity
-    cacheFactory.setEvictionPolicy(SessionCache.NEVER_EVICT);
-    //Only useful with the EVICT_ON_INACTIVE policy
-    //cacheFactory.setSaveOnInactiveEvict(true);
-    cacheFactory.setFlushOnResponseCommit(true);
-    cacheFactory.setInvalidateOnShutdown(false);
-    cacheFactory.setRemoveUnloadableSessions(true);
-    cacheFactory.setSaveOnCreate(true);
-    server.addBean(cacheFactory);
-    return cacheFactory;
-}
-```
-
-Configure a data store factory
-
-```java
-    public static FileSessionDataStoreFactory addFileSessionCacheFactory(Server server, File dir) {
-    //  There is one SessionDataStore per SessionCache. One file represents one sess in one context.
-    FileSessionDataStoreFactory storeFactory = new FileSessionDataStoreFactory();
-    storeFactory.setStoreDir(dir);
-    storeFactory.setGracePeriodSec(3600);
-    storeFactory.setSavePeriodSec(0);
-    server.addBean(storeFactory);
-    return storeFactory;
-}
-```
-
-Pull together all the _SessionHandler_ plumbing in one function
-
-```java
-public static SessionHandler configureSessionHandler(Server server, File dir) throws Exception {
-    SessionHandler sessionHandler = new SessionHandler();
-    // default config
-    sessionHandler.setHttpOnly(true);
-    sessionHandler.setSecureRequestOnly(true);
-    sessionHandler.setSameSite(HttpCookie.SameSite.STRICT);
-    // custom config
-    sessionHandler.setSessionIdManager(configureSessionIdManager(server));
-    sessionHandler.setSessionCache(addDefaultSessionCacheFactory(server).newSessionCache(sessionHandler));
-    sessionHandler.getSessionCache().setSessionDataStore(addFileSessionCacheFactory(server, dir).getSessionDataStore(sessionHandler));
-    return sessionHandler;
-}
-```
-
-Update the _Main_ file to reel in a _SessionHandler_ and add it to the _ServletContextHandler_
-
-```java
-public static void main(String[] args) throws Exception {
-    int port = 9080;
-    String resourceRoot = "C:\\Projects\\java\\reactive\\webzy\\www";
-    Server server = createServer(port);
-
-    // configure sess factories
-    Path sessionDir = Path.of(System.getProperty("user.dir"), "webzy/sess");
-    SessionHandler sessionHandler = configureSessionHandler(server, sessionDir.toFile());
-
-    // servlet context
-    ServletContextHandler context = new ServletContextHandler(server, "/");
-    context.setSessionHandler(sessionHandler);
-    context.setBaseResource(Resource.newResource(resourceRoot));
-    context.setWelcomeFiles(new String[]{"index.html"});
-
-    // the rest is the same as before
-}
-```
-
-Update the servlet to take advantage of session handling
-
-```java
-public class SessionDemo extends HttpServlet {
-
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String[][] choices = Arrays.stream(Objects.requireNonNullElse(req.getQueryString(), "expecting parameters in the query string")
-                .split("&")).map(m -> m.split("=")).toArray(String[][]::new);
-        int len = Optional.of(choices).map(q -> q.length).orElse(0);
-        HttpSession session = req.getSession(true);
-        JNode preferences = (JNode) session.getAttribute(PREFERENCES);
-        if (preferences == null) {
-            preferences = new JObject();
-            session.setAttribute(PREFERENCES, preferences);
-        }
-        if (len > 1) {
-            for (String[] pair : choices) {
-                preferences.putItem(pair[0], pair[1]);
-            }
-        }
-        resp.setStatus(200);
-        resp.getWriter().println(preferences);
-    }
-
-    @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        JNode preferences = JReader.fromJson(req.getInputStream());
-        HttpSession session = req.getSession(true);
-        session.setAttribute(PREFERENCES, preferences);
-        preferences.putItem("mood", "happy");
-
-        resp.setStatus(200);
-        resp.getWriter().println(preferences);
-    }
-}
-```
-
-Restart the server and fire up a _curl_ request again
-
-```bash
-curl http://localhost:9080/sess
-
-#output
-Preferences(color=red, size=XL, brand=volvo)
-```
-
-The response now contains the user preference configured by default.
-Now, pass color in the query string to see the response changing
-
-```bash
-curl http://localhost:9080/sess?color=green
-Preferences(color=green, size=XL, brand=volvo)
-```
-
-The configured _sessionDir_ folder should now also contain some files
-
-![saved-session-files](www/img/saved-session-files.png)
-
-## Phase 2
-
-Phase 1 looks good, and in the meantime, it will be put on ice. Now moving onto the next phase, which is working on the
-data servlet
-
-This will make use of _SSE_ (on the server-side with htp2 to
-overcome [http1 pipelining issues](https://en.wikipedia.org/wiki/HTTP_pipelining))
-in conjunction with _EventSource_ (on the client-side) to form a conduit of channeling changes in backend data to the
-frontend without manually
-fetching the data
-
-## The backend data store
-
-This data store is initialized by sending a json object to the backend through the __PUT__ method of the data servlet
+I recall some time back before GraphQL was even a thing, I was working on a Java REST API service having a Node.js frontend client.
+At the time, the plethora of tools that exist today which take care of a lot of mundane tasks like testing, did not exist. One of 
+the hacks I used was to define all the inputs (method, headers and payload) and expected outputs for a particular REST endpoint 
+in JSON format and then saving these definitions in a file. To automate testing, I would read that definitions file using Node.js, 
+create a _fetch POST request_, and sent it off to a Java test HTTP client on the server side. The client would then parse the request 
+definition, create the corresponding Java HTTP Request, interact with the Java backend services, get results and then return these 
+results as a JSON blob to the front end test client. The Node.js test client would then proceed to assert the expected output against 
+the definitions in the JSON file. When I look back, I can clearly recognize that the automation hack bears a lot of similarities with
+what GraphQL does today, at least in terms of getting any abstract data payload to the backend by way of using just a single HTTP 
 endpoint.
-This json can be manipulated (set, get, delete) by sending json snippets which will be overlaid onto the data already
-existing
-and cached in the backend session (remember phase 1?).
+
+Anyway, GraphQL was conceived in the crucibles of Facebook and a specification was formalized and open-source soo thereafter. 
+This specification has reference implementations in multiple programming languages and has found massive success in some niche 
+use cases. The motivation for GraphQL was primarily to overcome the pain points manifested by the REST architectural style, 
+especially the marshalling around of unused data and the unnecessary round trips to the server to fetch more of it. Since the 
+largest proportion of data consumers on Facebook were handheld devices, the REST architectural style was a huge turn off. With 
+GraphQL, the backend data could now easily be organized in a Graph format which made it easier to navigate and retrieve data 
+without making the unnecessary round trips that are ubiquitous with REST. Although GraphQL has solved a lot of the REST problems, 
+and despite having a very attractive value proposition, it nonetheless comes with the high risk of an inefficient backend, and 
+it also has a significantly steeper learning curve. For most businesses, the additional overhead of adopting GraphQL is not 
+always worth the cost of abandoning RESTful APIs, so these two paradigms are always dueling it out in public all the time.
+
+### LiveView
+
+This is another very interesting paradigm which has found great success within the Erlang family of products. The basic tenet is 
+that the initial page load will perform a full HTTP GET request, and upon loading in the client browser, the client application
+will establish a websocket connection where all subsequence exchange of data will happen. This is actually a fantastic value
+proposition, especially if already invested in Erlang-based products. With Erlang having been conceived in the crucibles of 
+telecoms, it is not inconceivable by any fetch of imagination, to have a single Erlang server handling connections to the 
+millions. So the medium of transmission is Websockets, and the response is in the form of markup (HTML) that is targeted to 
+the parts of the UI which require updating.  
+
+LiveView has also been ported to other programming languages like JavaScript, but I don't know how well Javascript can be
+able to pull off what Erlang can do. The idea however is excellent
+
+### DeSt
+
+_DeSt_ can be best summarized as an exercise of detecting what pieces of the backend data have changed, isolating these changes 
+to create a payload, transmitting the payload to the frontend as an event, and then using JavaScript in the UI to make precision 
+updates in only the places where a change represented in the payload data would produce a side effect. It's like having a "laser 
+guided data-missile" launched from the backend and its effect is a "very targeted UI update", of course the difference being 
+that the "guiding" is done using a "json-path" syntax, something akin to _x-path_ in XML" 
+
+This kind of exercise is already commonplace with frontend frameworks like React, SolidJS, RiotJS, BackboneJS etc., when dealing 
+with client-side state. By using a suitable "state-management library", these UI frameworks are able to create a very interactive 
+user experience through precision updates to the UI. 
+
+Extending this paradigm to the backend would however require some more serious considerations.
+1. Asynchronicity - the request-response model, where one request is fulfilled by one response, would not work here. The idea 
+is that a request should dispatch a description of a change that needs to be made in the backend, and the return immediately.
+The server will then process the request asynchronously and updating its backed JSON data model, the data model itself will
+detect the change, it will calculate the json-path to the locality of the data change, it will identify which output writer
+it needs to publish the change to, and write an event describing the data change there. Upon receiving this event, the client 
+will its mirror image of the backend data model. This change in the frontend data model should then be picked up by the UI
+framework (this is where SolidJS really shines) and produce a side effect in the UI.
+2. Transmission medium - since the request is decoupled from the response, the only two viable candidates here are Websockets
+and Server Sent Events. In addition, since all interaction with the backend is through an HTTP fetch request which returns 
+immediately with only a status (200, 201) code, the best candidate is therefore using Server Sent Events. This approach may 
+have had issues prior to HTTP/2.0, but these issues have been implicitly addressed through the evolution of the HTTP spec. 
+3. Symmetry - all allow automatic update of the client-side data to reflect the server-side data, it is important to keep the 
+data on both sides consistent. The server-side can occasionally offload the backend data into a JSON repository temporarily
+(like using a JDBC session handler) or for a longer term basis (like using a JSON database). When a client starts, it should 
+use this cached data to initialize itself, Using http event sourcing has the added benefit that SSE will automatically try to 
+help with verifying the last update was successfully received by the client using a last id approach. 
+4. Json-Path - this is a path which is traced from the object where the change happened, all the way up through the _parent()_
+chain till the root node. Since the JSON structure is a tree data structure, it automatically is also a directed acyclic 
+graph which converges at a single root node 
+5. Reactive JSON store - all this is only possible if the JSON store is build to detect changes and communicate these changes
+to a listener.
+
+## Json-Path data change specification
+
+The interface is a collection of default methods which means that providing a custom implementation is not necessary to be able
+to use this interface. However, this is the right place to implement custom behavior where calls can be dispatched to connected 
+clients via the writers configured in the _Observer_.
 
 ```java
-public class EventsServlet extends HttpServlet {
+/**
+ * Observer contains method for accepting events around changes in data for to Object of type JNode. Objects of this type
+ * (JArray and JObject) are 'reactive aware', meaning that they are able to know when any attribute inside themselves is
+ * changed, either through addition, updating or removal. This capability can be harnessed to using a concrete representation
+ * of the Observer, and should be writen to any concrete Writer of interest
+ */
+public interface Observer {
 
-    final DataEvents observer;
-    JNode preferences;
-
-    public EventsServlet(DataEvents observer) {
-        this.observer = observer;
+    /**
+     * applies to jarray
+     *
+     * @param target represents the root of the JSON object whose data is being changed
+     * @param path represents the 'json-path' string which follows the path from the element being changed up to the target or root node.
+     * @param value the value that was added to the array
+     */
+    default void add(Object target, String path, Object value) {
     }
 
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        AsyncContext async = req.startAsync();
-        async.start(() -> {
-            if (Objects.requireNonNull(req.getHeader("accept"), "Expected an 'Accept' header").contains("text/event-stream")) {
-
-                resp.setHeader("Content-Type", "text/event-stream");
-                resp.setHeader("Cache-Control", "no-store");
-                resp.setHeader("Connection", "keep-alive");
-                resp.setCharacterEncoding("UTF-8");
-                resp.setStatus(200);
-                try {
-                    PrintWriter out = resp.getWriter();
-                    observer.setOut(out);
-                    observer.write("connected", "now connected for data events");
-                } catch (IOException e) {
-                    async.complete();
-                    throw new RuntimeException(e);
-                }
-            }
-        });
+    /**
+     * applies to jobject
+     *
+     * @param target represents the root of the JSON object whose data is being changed
+     * @param path represents the 'json-path' string which follows the path from the element being changed up to the target or root node.
+     * @param key key used to identify a value in a dictionary
+     * @param oldValue  the value identified by the key 'key' in the dictionary before the update
+     * @param newValue  the new value that will be identified by the key 'key' in the dictionary
+     */
+    default void set(Object target, String path, String key, Object oldValue, Object newValue) {
     }
 
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        if (preferences == null) {
-            preferences = JReader.fromJson(new StringReader("{}"));
-            preferences.setObserver(observer);
-        }
-        String[][] choices = Arrays.stream(Objects.requireNonNullElse(req.getQueryString(), "expecting parameters in the query string")
-                .split("&")).map(m -> m.split("=")).toArray(String[][]::new);
-        int len = Optional.of(choices).map(q -> q.length).orElse(0);
-        if (len > 0) {
-            for (String[] pair : choices) {
-                preferences.putItem(pair[0], pair[1]);
-            }
-        }
-
-        resp.setStatus(200);
-        resp.getWriter().println(preferences);
-    }
-}
-```
-
-The __GET__ method of the same data servlet endpoint will initiate a __server-sent events__ connection with the browser,
-and will
-push data whenever this change is detected in the __JNode preferences__ object. This changes made to the data will be
-detected by
-the __DataEvents__ observer.
-
-From a developer perspective, the only development effort required to achieve this is to create an _Observer_ (in this
-case, _DataEvents_
-is the observer) to determine exactly what will be transmitted back the the client. In this illustration, we have 4
-events of interest.
-
-- set
-- get
-- delete
-
-These events will be used in the client to accept the corresponding event written to the socket
-
-```java
-
-@Setter
-@Getter
-public class DataEvents implements Observer {
-
-    PrintWriter out;
-
-    @Override
-    public void set(Object target, String path, String key, Object oldValue, Object newValue) {
-        write("set", String.format("updated value of %s.%s from %s to %s", path, key, oldValue, newValue));
+    /**
+     * applies to jarray
+     *
+     * @param target represents the root of the JSON object whose data is being changed
+     * @param path represents the 'json-path' string which follows the path from the element being changed up to the target or root node.
+     * @param index ordinal position of the value in the array
+     * @param value value in an array that has been accessed
+     */
+    default void get(Object target, String path, int index, Object value) {
     }
 
-    @Override
-    public void get(Object target, String path, String key, Object value) {
-        write("get", String.format("retrieved value '%s' from %s.%s", value, path, key));
+    /**
+     * applies to jobject
+     *
+     * @param target represents the root of the JSON object whose data is being changed
+     * @param path represents the 'json-path' string which follows the path from the element being changed up to the target or root node.
+     * @param key key used to identify a value in a dictionary
+     * @param value value in the dictionary that has been accessed
+     */
+    default void get(Object target, String path, String key, Object value) {
     }
 
-    @Override
-    public void delete(Object target, String path, String key, Object value) {
-        write("delete", String.format("deleted value '%s' from %s.%s", value, path, key));
+    /**
+     * applies to jarray
+     *
+     * @param target represents the root of the JSON object whose data is being changed
+     * @param path represents the 'json-path' string which follows the path from the element being changed up to the target or root node.
+     * @param index ordinal position of the value in the array
+     * @param value value in the array that has been removed
+     */
+    default void delete(Object target, String path, int index, Object value) {
     }
 
-    @Override
-    public void write(String event, String data) {
-        out.write(String.format("event: %s\n", event));
-        out.write(String.format("data: %s\n\n", data));
-        out.flush();
-        System.out.println("writing data event to - " + String.format("%s: %s (%d)", event, data, System.identityHashCode(out)));
-    }
-}
-```
-
-Additional plumbing will be required to connect the _EventsServlet_ to the server. This is accomplished by configuring a
-new
-__ServletContextHandler__
-
-```java
-public static ServletContextHandler configureEventsSource(Server server, String ctx) {
-    ServletContextHandler context = new ServletContextHandler(server, ctx);
-
-    //add new data events listener
-    ServletHolder dataEventsHolder = new ServletHolder();
-    dataEventsHolder.setServlet(new EventsServlet(new DataEvents()));
-    dataEventsHolder.setInitOrder(0);
-    dataEventsHolder.setAsyncSupported(true);
-    context.addServlet(dataEventsHolder, "/*");
-    return context;
-}
-```
-
-Since the server no has more than one __ServletContextHandler__, the handlers assigned to the server needs to be
-adjusted
-
-```bash
-# same as previous
-
-// configure event source
-ServletContextHandler sseContext = configureEventsSource(server, "/sse");
-        
-// start server
-ContextHandlerCollection contexts = new ContextHandlerCollection();
-contexts.addHandler(context);
-contexts.addHandler(sseContext);
-server.setHandler(contexts);
-server.start();
-```
-
-And remember that making that connection to the backend will now make use of http2, and for that, some adjustment will
-be needed as well
-
-```java
-public static Server createServer(int port) {
-    Server server = new Server();
-    HttpConfiguration httpConfig = new HttpConfiguration();
-    httpConfig.setSendServerVersion(false);
-    HttpConnectionFactory http11 = new HttpConnectionFactory(httpConfig);
-    // The ConnectionFactory for clear-text HTTP/2.
-    HTTP2CServerConnectionFactory h2c = new HTTP2CServerConnectionFactory(httpConfig);
-    // The ALPN ConnectionFactory.
-    ALPNServerConnectionFactory alpn = new ALPNServerConnectionFactory();
-    // The default protocol to use in case there is no negotiation.
-    alpn.setDefaultProtocol(http11.getProtocol());
-
-    try (ServerConnector connector = new ServerConnector(server, http11, h2c, alpn)) {
-        connector.setPort(port);
-        connector.setIdleTimeout(TimeUnit.HOURS.toMillis(1));
-        server.setConnectors(new Connector[]{connector});
-    }
-    return server;
-}
-```
-
-## The frontend data display
-
-In isolation, the backend changes made so far will not have any visible effect on the frontend. For this, there is a
-need to connect
-to the backend through the _EventSource_ object in javascript.
-
-```js
-const evtSource = new EventSource("/sse", {
-    withCredentials: false
-});
-
-evtSource.onmessage = (event) => {
-    addMessageLine(event);
-    console.log(evtSource.readyState)
-};
-
-evtSource.addEventListener('connected', event => {
-    addMessageLine(event);
-    console.log(evtSource.readyState)
-});
-
-evtSource.addEventListener('set', event => {
-    addMessageLine(event);
-    console.log(evtSource.readyState)
-});
-
-evtSource.addEventListener('get', event => {
-    addMessageLine(event);
-    console.log(evtSource.readyState)
-});
-
-evtSource.addEventListener('delete', event => {
-    addMessageLine(event);
-    console.log(evtSource.readyState)
-});
-
-evtSource.onerror = function (e) {
-    addMessageLine({data: "figure out why this error happened"})
-    console.log(evtSource.readyState)
-};
-```
-
-This is simply listening to named events, and sending them all to an _ordered list_ for display.
-
-```html
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
-          name="viewport">
-    <meta content="ie=edge" http-equiv="X-UA-Compatible">
-    <title>Data Events Demo</title>
-    <link href="favicon.ico" rel="shortcut icon" type="image/x-icon"/>
-    <link href="index.css" rel="stylesheet" type="text/css">
-    <script src="store.js" type="text/javascript"></script>
-</head>
-<body>
-<ol id="list"></ol>
-</body>
-</html>
-```
-
-At this point, restart the server and fire off some _curl requests_.
-
-```bash
- curl -X PUT "http://localhost:9080/sse/?color=blue&make=mazda"
- 
- # output
-{color=blue, make=mazda}
-```
-
-And the browser will continue to show the data which you are changing. This data could by arbitrary
-
-![event source data](www/img/events-source-data.png)
-
-## Phase 3
-
-Phase 2 looks good, but for completeness, I will illustrate phase 2 using a _WebSocket_ which is really an overkill for
-this
-illustration example, but someone else might find it useful.
-
-Configure a Websocket handler and attach to the server
-
-```java
-public static ServletContextHandler configureWebsocket(Server server, String ctx, Function<String, Object> endpoint) {
-    ServletContextHandler context = new ServletContextHandler(server, ctx);
-
-    JettyWebSocketServletContainerInitializer.configure(context, (servletContext, container) -> {
-        // Configure default max size
-        container.setMaxTextMessageSize(128 * 1024);
-        container.setIdleTimeout(Duration.ofMinutes(2));    // this allows you to estimate a ping interval of say 90 seconds on the client side
-        // Add websockets
-        container.addMapping("^/ws/(.+)$", (upgradeRequest, upgradeResponse) -> {
-            upgradeResponse.setAcceptedSubProtocol("protocolOne");
-
-            // Retrieve the Regex template (other templates are ServletPathSpec and UriTemplatePathSpec).
-            RegexPathSpec pathSpec = (RegexPathSpec) upgradeRequest.getServletAttribute(PathSpec.class.getName());
-
-            // Match the URI template.
-            Matcher matcher = pathSpec.getPattern().matcher(upgradeRequest.getRequestPath());
-            String id = "0";
-            if (matcher.find()) {
-                id = matcher.group(1);
-            }
-
-            return endpoint.apply(id);
-        });
-    });
-    return context;
-}
-```
-
-The illustration here is a simple generic Websocket endpoint, which as an exercise, you can extend to do the same thing
-and the
-EventsServlet
-
-```java
-
-@Slf4j
-public class EventsEndpoint extends WebSocketAdapter {
-
-    final String id;
-
-    public EventsEndpoint(String id) {
-        this.id = id;
+    /**
+     * applies to jobject
+     *
+     * @param target represents the root of the JSON object whose data is being changed
+     * @param path represents the 'json-path' string which follows the path from the element being changed up to the target or root node.
+     * @param key key used to identify a value in a dictionary
+     * @param value value in the dictionary that has been removed
+     */
+    default void delete(Object target, String path, String key, Object value) {
     }
 
-    @Override
-    public void onWebSocketConnect(Session sess) {
-        super.onWebSocketConnect(sess);
-        log.debug("Endpoint connected: {}", sess);
-        try {
-            sess.getRemote().sendString("you are now connected");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    /**
+     * applies to jarray - removal of an array using predicate function
+     *
+     * @param target represents the root of the JSON object whose data is being changed
+     * @param path represents the 'json-path' string which follows the path from the element being changed up to the target or root node.
+     * @param value a predicate function used to search for a target value for deletion in the array
+     */
+    default void delete(Object target, String path, Object value) {
     }
 
-    @Override
-    public void onWebSocketText(String message) {
-        super.onWebSocketText(message);
-        log.debug("Received TEXT message: {}", message);
-
-        if (message.toLowerCase(Locale.US).contains("bye")) {
-            getSession().close(StatusCode.NORMAL, "Thanks");
-        } else {
-            //echo back a capitalized message
-            try {
-                getSession().getRemote().sendString(message.toUpperCase());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
+    /**
+     *
+     * @param target  unique identifier associated with the root resource undergoing modification
+     * @param data  the stringified version of the change data payload
+     */
+    default void write(String target, String data) {
     }
 
-    @Override
-    public void onWebSocketClose(int statusCode, String reason) {
-        super.onWebSocketClose(statusCode, reason);
-        log.debug("Socket Closed: [{}] {}", statusCode, reason);
-    }
-
-    @Override
-    public void onWebSocketError(Throwable cause) {
-        super.onWebSocketError(cause);
-        cause.printStackTrace(System.err);
+    /**
+     *
+     * @param target unique identifier associated with the root resource undergoing modification
+     * @param event  name of event to be associated with the write operation
+     * @param data  the stringified version of the change data payload
+     */
+    default void write(String target, String event, String data) {
     }
 }
+
 ```
 
-Add to the server
+## PART II: Reference implementation
 
-```bash
-//configure websocket
-ServletContextHandler wsContext = configureWebsocket(server, "/events", EventsEndpoint::new);
-
-// start server
-ContextHandlerCollection contexts = new ContextHandlerCollection();
-contexts.addHandler(context);
-contexts.addHandler(wsContext);
-contexts.addHandler(sseContext);
-server.setHandler(contexts);
-server.start();
-```
-
-The backend needs to be complemented with some work on the frontend, so complete the data pipeline
-
-```js
-startWebSocket();
-
-function startWebSocket() {
-    // Create a WebSocket connection.
-    const socket = new WebSocket("ws://localhost:9080/events/ws/10", "protocolOne");
-    const ping_interval = 90 * 1000; // it's in milliseconds, which equals to 2 minutes
-    let interval;
-
-    // Connection opened
-    socket.addEventListener("open", (event) => {
-        socket.send(JSON.stringify({message: "Hello Server!"}));
-        const ping = JSON.stringify({"ping": 1});
-
-        interval = setInterval(() => {
-            socket.send(ping);
-        }, ping_interval);
-
-        //attach submit listener for form
-        document.querySelector("#data-form").addEventListener('submit', e => {
-            e.preventDefault();
-            socket.send(JSON.stringify({"message": e.currentTarget.name.value}));
-            e.currentTarget.name.value = "";
-        });
-    });
-
-    // Listen for messages
-    socket.addEventListener("message", (event) => {
-        console.log("Message from server ", event.data);
-        addMessageLine(event)
-    });
-
-    socket.addEventListener("error", (event) => {
-        console.log("error occurred with the socket ", event)
-        addMessageLine(event)
-    });
-
-    socket.addEventListener("close", (event) => {
-        console.log("socket has been closed by the server ", event)
-        addMessageLine(event)
-
-        // dispose interval
-        clearInterval(interval);
-    });
-}
-
-function toggleForm(e) {
-    document.getElementById("data-form").classList.toggle('hidden')
-    let text = e.innerHTML;
-    e.innerHTML = text.startsWith("Show") ? "Hide WS Form" : "Show WS Form";
-}
-```
-
-And the html requires addition of a form
-
-```html
-
-<button onclick="toggleForm(this)" type="button">Show WS Form</button>
-
-<form class="hidden" id="data-form">
-    <label>
-        <input id="name" name="message"/>
-    </label>
-    <input type="submit" value="Send"/>
-</form>
-```
-
-And the list of messages will continue to populate with messages coming from the server
-
-![websocket data](www/img/websocket-data.png)
-
-## phase 4 - Saving the session in a database
-
-Using H2 DB
-
-To create a database, start H2's Shell tool and create the database file. To do this, navigate to the _bin_ directory of
-your __H2__ installation folder, and follow the prompts. Below is an example for illustration
-
-```bash
-java -cp h2-2.1.212.jar org.h2.tools.Shell
-
-Welcome to H2 Shell 2.1.212 (2022-04-09)
-Exit with Ctrl+C
-[Enter]   jdbc:h2:tcp://localhost/~/.data/todos-db
-URL       jdbc:h2:file:~/.data/h2/jdbc-session
-[Enter]   org.h2.Driver
-Driver
-[Enter]   sa
-User
-Password  Password  >>><
-Type the same password again to confirm database creation.
-Password  Password  >>><
-Connected
-Commands are case insensitive; SQL statements end with ';'
-help or ?      Display this help
-list           Toggle result list / stack trace mode
-maxwidth       Set maximum column width (default is 100)
-autocommit     Enable or disable autocommit
-history        Show the last 20 statements
-quit or exit   Close the connection and exit
-
-sql> exit
-Connection closed
-```
-
-You should now be able to accses this database using any tool/editor of your choice.
-
-Configure a jdbc data factory
-
-```java
-public static JDBCSessionDataStoreFactory addJdbcDataStoreFactory(String driver, String url) {
-    DatabaseAdaptor databaseAdaptor = new DatabaseAdaptor();
-    databaseAdaptor.setDriverInfo(driver, url);
-    // databaseAdaptor.setDatasource(myDataSource); // you can set data source here (for connection pooling, etc)
-    JDBCSessionDataStoreFactory jdbcSessionDataStoreFactory = new JDBCSessionDataStoreFactory();
-    jdbcSessionDataStoreFactory.setDatabaseAdaptor(databaseAdaptor);
-    return jdbcSessionDataStoreFactory;
-}
-```
-
-Proceed to create a jdbc session handler
-
-```java
-public static SessionHandler configureJdbcSessionHandler(Server server, String driver, String url) throws Exception {
-    SessionHandler sessionHandler = new SessionHandler();
-    // default config
-    sessionHandler.setHttpOnly(true);
-    sessionHandler.setSecureRequestOnly(true);
-    sessionHandler.setSameSite(HttpCookie.SameSite.STRICT);
-    // custom config
-    sessionHandler.setSessionIdManager(configureSessionIdManager(server));
-    sessionHandler.setSessionCache(addDefaultSessionCacheFactory(server).newSessionCache(sessionHandler));
-    sessionHandler.getSessionCache().setSessionDataStore(addJdbcDataStoreFactory(driver, url).getSessionDataStore(sessionHandler));
-    return sessionHandler;
-}
-```
-
-Wire this new session handler to the server instead
-
-```bash
-// configure jdbc data session handler
-String driver = "org.h2.Driver";
-// use a better method for passing credentials. The usage below should only be used in scenarios like testing
-String url = "jdbc:h2:file:~/.data/h2/jdbc-session;USER=sa;PASSWORD=password";
-SessionHandler jdbcDataSessionHandler = configureJdbcSessionHandler(server, driver, url);
-
-// servlet context
-ServletContextHandler context = new ServletContextHandler(server, "/");
-//        context.setSessionHandler(fileDataSessionHandler);
-context.setSessionHandler(jdbcDataSessionHandler);
-```
-
-If you prefer, you can start an instance of H2 Db, and access the database through a TCP connection instead of locking
-the
-files up through direct access.
-
-```bash
-# view options available to start the server
-java -cp h2-2.1.212.jar org.h2.tools.Server -?
-
-# start the server using minimum options (this will bring up the console view in the browser)
-java -cp h2-2.1.212.jar org.h2.tools.Server
-
-# change the access usl to use tcp instead of file
-String url = "jdbc:h2:tcp://localhost/~/.data/h2/jdbc-session;USER=sa;PASSWORD=password";
-```
-
-![H2 DB browser console](www/img/h2-db-console.png)
-
-Fire up the server, and make a curl request to any endpoint using a session
-
-```bash
-curl "http://localhost:9080/data?color=red&make=mazda&trim=XL"
-
-# output
-{color=red, make=mazda, trim=XL}
-```
-
-Now check the database for a new entry
-
-![jdbc-session table entry](www/img/jdbc-session-entry.png)
-
-Open a browser tab on the data endpoint
-
-![empty session data](www/img/empty_session_data.png)
-
-Send a query string with key-value pairs
-
-![new session data values](www/img/new_session_data_values.png)
-
-Restarting the server and accessing the data endpoint should return the object already in session
-
-![data from last session](www/img/data_from_last_session.png)
-
-Updating the session data will add new fields or update existing fields
-
-![iadd or update data fields](www/img/add_or_update_fields.png)
-
-And that brings us to the end of this phase where there is session data that can be updated, and which is saved in a
-database.
-
-## Phase 5—Change data capture
-
-At this point, it should be practical to start asking questions like:
-
-- Is it possible to share session data between two users?
-- Is it possible to transmit changes to this data to all the parties who share it?
-
-The first step would be to take advantage of change data capture _(cdc)_ tools that are in existence, and to also use a
-database which lends itself easily to change data capture.
-Postgres is a good candidate because of its write-ahead transaction log architecture, which allows a connector to
-produce a change event for every row-level insert, update, and delete operation that was captured.
-
-To make things easier, I'll use docker to run Postgres without having to install it on the development machine. This
-docker instance needs to be configured for cdc.
-
-```bash
-docker run -d ^
-	--name jdbc-sessions-postgres ^
-	-e POSTGRES_PASSWORD=postgres ^
-	-e PGDATA=/var/lib/postgresql/data/pgdata ^
-	-v C:\\Users\\maina\\.data\\cdc:/var/lib/postgresql/data ^
-	-p 5432:5432 ^
-	postgres:14-bullseye
-```
-
-Set up a dedicated user for use with cdc. To provide a user with replication permissions, define a PostgreSQL role that
-has at least the REPLICATION and LOGIN permissions,
-and then grant that role to the created user.
-
-```bash
-docker exec -it e74053299f57 bash
-root@e74053299f57:/# psql -U postgres
-psql (14.10 (Debian 14.10-1.pgdg110+1))
-Type "help" for help.
-
-postgres=# \d
-Did not find any relations.
-postgres=# create table jdbcsessions;
-postgres=# \c jdbcsessions;
-You are now connected to database "jdbcsessions" as user "postgres".
-postgres=# CREATE USER replicator WITH REPLICATION LOGIN PASSWORD 'postgres';
-CREATE ROLE
-postgres=# CREATE DATABASE jdbcsessions;
-CREATE
-```
-
-One the jdbc session table _(jettysessions)_ has been created, you will need to go back to postgres and grant the
-_replicator_ user
-permissions on that table
-
-```bash
-postgres=# \c jdbcsessions
-You are now connected to database "jdbcsessions" as user "postgres".
-jdbcsessions=# grant all on jettysessions to replicator;
-GRANT
-exit
-```
-
-Client authentication is controlled by a configuration file, which traditionally is named __pg_hba.conf__ and is stored
-in the database cluster's data directory.
-This file needs to be adjusted, and
-more [details can be found here](https://debezium.io/documentation/reference/2.5/connectors/postgresql.html#postgresql-permissions)
-
-```bash
- apt update && apt install nano
- nano var/lib/postgresql/data/pgdata/pg_hba.conf
-
-# make these additions
-local   replication     replicator                          trust
-host    replication     replicator  127.0.0.1/32            trust
-host    replication     replicator  ::1/128                 trust
- 
- # change another file
- nano var/lib/postgresql/data/pgdata/postgresql.con
- 
-# make these changes
-wal_level = logical 
-```
-
+Coming soon!

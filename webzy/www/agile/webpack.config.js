@@ -19,10 +19,10 @@ module.exports = (env) => {
         plugins: [
             new CopyPlugin({
                 patterns: [
-                    { from: "public/favicon.ico", to: "favicon.ico" },
-                    { from: "public/fa", to: "fa" },
-                    { from: "public/reset.css", to: "reset.css" },
-                    { from: "public/scrum.css", to: "scrum.css" },
+                    {from: "public/favicon.ico", to: "favicon.ico"},
+                    {from: "public/fa", to: "fa"},
+                    {from: "public/reset.css", to: "reset.css"},
+                    {from: "public/scrum.css", to: "scrum.css"},
                 ],
             }),
             new HtmlWebpackPlugin({
@@ -30,8 +30,23 @@ module.exports = (env) => {
                 template: 'public/index.html'
             }),
         ],
-        // optimization: {
-        //     runtimeChunk: 'single',
-        // },
+        module: {
+            rules: [
+                {
+                    test: /\.riot$/,
+                    exclude: /node_modules/,
+                    use: [
+                        {
+                            loader: '@riotjs/webpack-loader',
+                            options: {
+                                hot: false, // set it to true if you are using hmr
+                                // add here all the other @riotjs/compiler options riot.js.org/compiler
+                                // template: 'pug' for example
+                            },
+                        },
+                    ],
+                },
+            ],
+        },
     }
 }

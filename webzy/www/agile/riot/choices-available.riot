@@ -1,0 +1,8 @@
+<choices-available>
+    <section class="flex-row" id="submitting-choice">
+        <article class="pure-u-1-4 {value === props.choice? 'selected-choice' : ''}" each="{ value in props.choices }" value
+                 { }>
+            <p class="choice" onclick="{() => props.onSelectChoice(value)}">{value}</p>
+        </article>
+    </section>
+</choices-available>

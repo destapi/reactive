@@ -1,0 +1,33 @@
+<organizer-form>
+    <section class="pure-g">
+        <form class="pure-form organizer-form" onsubmit="{this.onOrganizeNewScrum}">
+            <fieldset class="pure-group">
+                <label>
+                    <input class="pure-input-1-2" name="screenName" placeholder="Screen Name" type="text"/>
+                </label>
+            </fieldset>
+            <fieldset class="pure-group">
+                <label>
+                    <input class="pure-input-1-2" name="scrumTitle" placeholder="Scrum Title" type="text"/>
+                </label>
+            </fieldset>
+            <fieldset class="pure-group">
+                <label>
+                    <textarea class="pure-input-1-2" name="voteChoices"
+                              placeholder="Add choices, one line per choice" value="1,2,3,4"></textarea>
+                </label>
+            </fieldset>
+            <button class="pure-button pure-input-1-2 pure-button-primary" type="submit">Organize</button>
+        </form>
+    </section>
+
+    <script>
+        import {organizeNewScrum} from '../src/store';
+
+        export default {
+            onOrganizeNewScrum(e) {
+                organizeNewScrum(e)
+            },
+        }
+    </script>
+</organizer-form>

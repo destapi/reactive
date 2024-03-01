@@ -1,0 +1,59 @@
+<todos-list>
+    <h3>{ props.title }</h3>
+
+    <ul>
+        <li each={ item in state.todos }>
+            <label class={ item.completed ? 'completed' : null }>
+                <input
+                        type="checkbox"
+                        checked={ item.completed }
+                        onclick={ () => toggle(item) } />
+                { item.task }
+            </label>
+        </li>
+    </ul>
+
+    <form onsubmit={ add }>
+        <input onkeyup={ edit } value={ state.task } />
+        <button disabled={ !state.task }>
+            Add #{ state.todos.length + 1 }
+        </button>
+    </form>
+
+    <script>
+        export default {
+            onBeforeMount(props, state) {
+                // initial state
+                this.state = {
+                    todos: props.todos,
+                    task: ''
+                }
+            },
+            edit(e) {
+                // update only the text state
+                this.update({
+                    task: e.target.value
+                })
+            },
+            add(e) {
+                e.preventDefault()
+
+                if (this.state.task) {
+                    this.update({
+                        todos: [
+                            ...this.state.todos,
+                            // add a new item
+                            {task: this.state.task}
+                        ],
+                        task: ''
+                    })
+                }
+            },
+            toggle(item) {
+                item.completed = !item.completed
+                // trigger a component update
+                this.update()
+            }
+        }
+    </script>
+</todos-list>

@@ -39,7 +39,7 @@ public class JoinTodoServlet extends HttpServlet {
                 resp.setStatus(200);
                 try {
                     PrintWriter out = resp.getWriter();
-                    observer.getWriters().put(listId, out);
+                    observer.addConnection(listId, listOwner, out);
                     TodoEvent event = new TodoEvent(listId, "System", String.format("'%s' can now access todos named '%s'", listOwner, listName));
                     JNode node = JClass.nodify(event);
                     observer.write(listId, JWriter.stringify(node).replaceAll("\\n", ""));

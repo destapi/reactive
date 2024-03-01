@@ -3,6 +3,7 @@ package com.akilisha.reactive.json;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class JObject extends LinkedHashMap<String, Object> implements JNode {
 
@@ -51,7 +52,7 @@ public class JObject extends LinkedHashMap<String, Object> implements JNode {
         if (obj != null) {
             if (JNode.class.isAssignableFrom(obj.getClass())) {
                 ((JNode) obj).parent(this);
-                ((JNode)obj).path(".".concat(key));
+                ((JNode) obj).path(".".concat(key));
             }
         }
 
@@ -61,6 +62,18 @@ public class JObject extends LinkedHashMap<String, Object> implements JNode {
         }
 
         put(key, obj);
+    }
+
+    @Override
+    public <E> E replaceItem(String key, Consumer<JNode> predicate) {
+        Object value = get(key);
+        predicate.accept((JNode) value);
+
+        Observer rootObserver = this.root().getObserver();
+        if (rootObserver != null) {
+            rootObserver.replace(this, this.tracePath(), key, value);
+        }
+        return (E) value;
     }
 
     @Override

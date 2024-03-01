@@ -1,0 +1,166 @@
+.container {
+    display: flex;
+    flex-direction: column;
+}
+
+/** Navigation **/
+.navigation {
+    display: flex;
+    flex-direction: row;
+    min-height: 50px;
+    border-bottom: 1px solid #ccc;
+    padding: 10px;
+}
+
+.navigation .logo {
+    min-width: 50px;
+    padding-top: 5px;
+}
+
+.navigation .logo .fa-cogs {
+    font-size: 2em;
+}
+
+.navigation .title {
+    flex-grow: 1;
+    font-weight: bold;
+    line-height: 2em;
+    padding-top: 5px;
+}
+
+.navigation label {
+    display: block;
+    margin: 15px 20px;
+    cursor: pointer;
+}
+
+.navigation label a {
+    text-decoration: none;
+}
+
+.navigation label .radio {
+    display: inline-block;
+    padding-right: 7px;
+}
+
+.navigation .menu {
+    width: 100px;
+    text-align: center;
+    padding-top: 10px;
+}
+
+.navigation .menu .fa-github {
+    font-size: 2em;
+}
+
+/* Organizer form */
+.organizer-form {
+    padding: 10px;
+    width: 100%;
+}
+
+.organizer-form textarea {
+    min-height: 100px;
+}
+
+/* Participant Form */
+.participant-form {
+    padding: 10px;
+    width: 100%;
+}
+
+/** submit form */
+.form-row {
+    display: flex;
+    flex-direction: row;
+    padding: 10px;
+    gap: 10px;
+    width: 100%;
+}
+
+.form-row .text-area {
+    flex-grow: 1;
+    position: relative;
+}
+
+.form-row .text-area .fa {
+    font-size: 3em;
+    color: darkred;
+    position: absolute;
+    cursor: pointer;
+}
+
+.form-row .text-area .fa-arrow-circle-up {
+    bottom: 5px;
+    right: 10px;
+}
+
+.form-row .text-area .fa-eye {
+    bottom: 5px;
+    left: 10px;
+}
+
+.form-row .text-area .fa-eye-slash {
+    bottom: 5px;
+    left: 10px;
+}
+
+.form-row textarea {
+    min-height: 100px;
+    width: 100%;
+    padding: 5px;
+    font-size: 3em;
+    line-height: 2em;
+}
+
+/* Participants voting */
+.flex-row {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.flex-row article {
+    background-color: #eeeeee;
+    margin: 5px;
+    max-width: 33.3%; /* change this value depending on the number of columns */
+    flex-grow: 1;
+}
+
+.flex-row article .title-bar {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0 10px;
+}
+
+.flex-row article .title-bar .screenName {
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+.flex-row article .controls {
+    padding-right: 10px;
+    text-align: right;
+}
+
+.flex-row article .controls i {
+    cursor: pointer;
+    color: darkred;
+    font-size: 1.5em;
+}
+
+.flex-row article .vote {
+    font-size: 5em;
+    text-align: center;
+}
+
+.flex-row article .choice {
+    font-size: 4em;
+    line-height: 3em;
+    text-align: center;
+    cursor: pointer;
+}
+
+.flex-row article.selected-choice {
+    background-color: bisque;
+}

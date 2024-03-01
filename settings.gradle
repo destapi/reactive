@@ -15,4 +15,5 @@ include 'data'
 include 'json'
 include 'webzy'
 include 'tcpnio'
+include 'mvel'
 

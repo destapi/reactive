@@ -3,16 +3,16 @@ package com.akilisha.reactive.webzy;
 import com.akilisha.reactive.json.JNode;
 import com.akilisha.reactive.webzy.cdc.CdcConnect;
 import com.akilisha.reactive.webzy.chat.ChatObserver;
-import com.akilisha.reactive.webzy.chat.ChatServlet;
+import com.akilisha.reactive.webzy.chat.HandleChatServlet;
 import com.akilisha.reactive.webzy.chat.JoinServlet;
 import com.akilisha.reactive.webzy.scrum.JoinScrumServlet;
 import com.akilisha.reactive.webzy.scrum.ScrumObserver;
-import com.akilisha.reactive.webzy.scrum.StartScrumServlet;
+import com.akilisha.reactive.webzy.scrum.HandleScrumServlet;
 import com.akilisha.reactive.webzy.sess.SessionDemo;
 import com.akilisha.reactive.webzy.sse.DataEvents;
 import com.akilisha.reactive.webzy.sse.EventsServlet;
 import com.akilisha.reactive.webzy.todos.JoinTodoServlet;
-import com.akilisha.reactive.webzy.todos.StartTodosServlet;
+import com.akilisha.reactive.webzy.todos.HandleTodosServlet;
 import com.akilisha.reactive.webzy.todos.TodoListObserver;
 import com.akilisha.reactive.webzy.ws.EventsEndpoint;
 import jakarta.servlet.DispatcherType;
@@ -25,6 +25,7 @@ import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.session.*;
 import org.eclipse.jetty.servlet.DefaultServlet;
+import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
@@ -165,6 +166,12 @@ public class Main {
         chatHolder.setInitOrder(1);
         chatHolder.setAsyncSupported(true);
         context.addServlet(chatHolder, "/*");
+
+        FilterHolder corsHolder = new FilterHolder();
+        corsHolder.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*");
+        corsHolder.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM, "GET,POST,OPTIONS,DELETE,PUT,HEAD");
+        corsHolder.setHeldClass(CrossOriginFilter.class);
+        context.addFilter(corsHolder, "/*", EnumSet.of(DispatcherType.REQUEST));
         return context;
     }
 
@@ -172,12 +179,17 @@ public class Main {
         ServletContextHandler context = new ServletContextHandler(server, ctx);
 
         //add new data events listener
-        ServletHolder chatHolder = new ServletHolder();
-        chatHolder.setServlet(new JoinScrumServlet(observer));
-        chatHolder.setInitOrder(1);
-        chatHolder.setAsyncSupported(true);
-        context.addServlet(chatHolder, "/*");
-        context.addFilter(CrossOriginFilter.class, "/*", EnumSet.of(DispatcherType.REQUEST));
+        ServletHolder scrumHolder = new ServletHolder();
+        scrumHolder.setServlet(new JoinScrumServlet(observer));
+        scrumHolder.setInitOrder(1);
+        scrumHolder.setAsyncSupported(true);
+        context.addServlet(scrumHolder, "/*");
+
+        FilterHolder corsHolder = new FilterHolder();
+        corsHolder.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*");
+        corsHolder.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM, "GET,POST,OPTIONS,DELETE,PUT,HEAD");
+        corsHolder.setHeldClass(CrossOriginFilter.class);
+        context.addFilter(corsHolder, "/*", EnumSet.of(DispatcherType.REQUEST));
         return context;
     }
 
@@ -185,12 +197,17 @@ public class Main {
         ServletContextHandler context = new ServletContextHandler(server, ctx);
 
         //add new data events listener
-        ServletHolder chatHolder = new ServletHolder();
-        chatHolder.setServlet(new JoinTodoServlet(observer));
-        chatHolder.setInitOrder(1);
-        chatHolder.setAsyncSupported(true);
-        context.addServlet(chatHolder, "/*");
-        context.addFilter(CrossOriginFilter.class, "/*", EnumSet.of(DispatcherType.REQUEST));
+        ServletHolder todoHolder = new ServletHolder();
+        todoHolder.setServlet(new JoinTodoServlet(observer));
+        todoHolder.setInitOrder(1);
+        todoHolder.setAsyncSupported(true);
+        context.addServlet(todoHolder, "/*");
+
+        FilterHolder corsHolder = new FilterHolder();
+        corsHolder.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*");
+        corsHolder.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM, "GET,POST,OPTIONS,DELETE,PUT,HEAD");
+        corsHolder.setHeldClass(CrossOriginFilter.class);
+        context.addFilter(corsHolder, "/*", EnumSet.of(DispatcherType.REQUEST));
         return context;
     }
 
@@ -199,10 +216,16 @@ public class Main {
 
         //add new data events listener
         ServletHolder chatHolder = new ServletHolder();
-        chatHolder.setServlet(new ChatServlet(observer));
+        chatHolder.setServlet(new HandleChatServlet(observer));
         chatHolder.setInitOrder(0);
         chatHolder.setAsyncSupported(true);
         context.addServlet(chatHolder, "/*");
+
+        FilterHolder corsHolder = new FilterHolder();
+        corsHolder.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*");
+        corsHolder.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM, "GET,POST,OPTIONS,DELETE,PUT,HEAD");
+        corsHolder.setHeldClass(CrossOriginFilter.class);
+        context.addFilter(corsHolder, "/*", EnumSet.of(DispatcherType.REQUEST));
         return context;
     }
 
@@ -210,12 +233,17 @@ public class Main {
         ServletContextHandler context = new ServletContextHandler(server, ctx);
 
         //add new data events listener
-        ServletHolder chatHolder = new ServletHolder();
-        chatHolder.setServlet(new StartScrumServlet(observer));
-        chatHolder.setInitOrder(0);
-        chatHolder.setAsyncSupported(true);
-        context.addServlet(chatHolder, "/*");
-        context.addFilter(CrossOriginFilter.class, "/*", EnumSet.of(DispatcherType.REQUEST));
+        ServletHolder scrumHolder = new ServletHolder();
+        scrumHolder.setServlet(new HandleScrumServlet(observer));
+        scrumHolder.setInitOrder(0);
+        scrumHolder.setAsyncSupported(true);
+        context.addServlet(scrumHolder, "/*");
+
+        FilterHolder corsHolder = new FilterHolder();
+        corsHolder.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*");
+        corsHolder.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM, "GET,POST,OPTIONS,DELETE,PUT,HEAD");
+        corsHolder.setHeldClass(CrossOriginFilter.class);
+        context.addFilter(corsHolder, "/*", EnumSet.of(DispatcherType.REQUEST));
         return context;
     }
 
@@ -223,12 +251,17 @@ public class Main {
         ServletContextHandler context = new ServletContextHandler(server, ctx);
 
         //add new data events listener
-        ServletHolder chatHolder = new ServletHolder();
-        chatHolder.setServlet(new StartTodosServlet(observer));
-        chatHolder.setInitOrder(0);
-        chatHolder.setAsyncSupported(true);
-        context.addServlet(chatHolder, "/*");
-        context.addFilter(CrossOriginFilter.class, "/*", EnumSet.of(DispatcherType.REQUEST));
+        ServletHolder todoHolder = new ServletHolder();
+        todoHolder.setServlet(new HandleTodosServlet(observer));
+        todoHolder.setInitOrder(0);
+        todoHolder.setAsyncSupported(true);
+        context.addServlet(todoHolder, "/*");
+
+        FilterHolder corsHolder = new FilterHolder();
+        corsHolder.setInitParameter(CrossOriginFilter.ALLOWED_ORIGINS_PARAM, "*");
+        corsHolder.setInitParameter(CrossOriginFilter.ALLOWED_METHODS_PARAM, "GET,POST,OPTIONS,DELETE,PUT,HEAD");
+        corsHolder.setHeldClass(CrossOriginFilter.class);
+        context.addFilter(corsHolder, "/*", EnumSet.of(DispatcherType.REQUEST));
         return context;
     }
 
@@ -270,7 +303,7 @@ public class Main {
     }
 
     public static void main(String[] args) throws Exception {
-        String activity = args.length > 0 ? args[0] : SCRUMMING;
+        String activity = args.length > 0 ? args[0] : TODOLIST;
         int port = 9080;
         String resourceRoot = "C:\\Projects\\java\\reactive\\webzy\\www";
         Server server = createServer(port);
@@ -305,21 +338,25 @@ public class Main {
         ServletContextHandler startServlet = null;
         ServletContextHandler joinServlet = null;
 
-        if (activity.equals(CHATTING)) {
-            ChatObserver chatObserver = new ChatObserver();
-            startServlet = configureStartChatServlet(server, "/chat", chatObserver);
-            joinServlet = configureJoinChatServlet(server, "/join", chatObserver);
-        } else if (activity.equals(SCRUMMING)) {
-            ScrumObserver scrumObserver = new ScrumObserver();
-            startServlet = configureStartScrumServlet(server, "/scrum", scrumObserver);
-            joinServlet = configureJoinScrumServlet(server, "/join", scrumObserver);
-        } else if(activity.equals(TODOLIST)){
-            TodoListObserver todosObserver = new TodoListObserver();
-            startServlet = configureStartTodoServlet(server, "/todos", todosObserver);
-            joinServlet = configureJoinTodoServlet(server, "/join", todosObserver);
-        }
-        else {
-            System.err.println("No activity has been registered");
+        switch (activity) {
+            case CHATTING:
+                ChatObserver chatObserver = new ChatObserver();
+                startServlet = configureStartChatServlet(server, "/chat", chatObserver);
+                joinServlet = configureJoinChatServlet(server, "/join", chatObserver);
+                break;
+            case SCRUMMING:
+                ScrumObserver scrumObserver = new ScrumObserver();
+                startServlet = configureStartScrumServlet(server, "/scrum", scrumObserver);
+                joinServlet = configureJoinScrumServlet(server, "/join", scrumObserver);
+                break;
+            case TODOLIST:
+                TodoListObserver todosObserver = new TodoListObserver();
+                startServlet = configureStartTodoServlet(server, "/todos", todosObserver);
+                joinServlet = configureJoinTodoServlet(server, "/join", todosObserver);
+                break;
+            default:
+                System.err.println("No activity has been registered");
+                break;
         }
 
         // add and configure default servlet

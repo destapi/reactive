@@ -1,21 +1,24 @@
 package com.akilisha.reactive.webzy.todos;
 
 import com.akilisha.reactive.json.*;
+import com.akilisha.reactive.webzy.todos.model.Member;
 import com.akilisha.reactive.webzy.todos.model.MockTodos;
+import com.akilisha.reactive.webzy.todos.model.TodoList;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.Objects;
 
-public class StartTodosServlet extends HttpServlet {
+public class HandleTodosServlet extends HttpServlet {
 
     private final TodoListObserver observer;
 
-    public StartTodosServlet(TodoListObserver observer) {
+    public HandleTodosServlet(TodoListObserver observer) {
         this.observer = observer;
     }
 
@@ -24,19 +27,32 @@ public class StartTodosServlet extends HttpServlet {
      * */
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        JNode todoList = JReader.parseJson(req.getInputStream());
+        JNode todos = JReader.parseJson(req.getInputStream());
+        String listId = req.getParameter("listId");
+        String listName = req.getParameter("listName");
+        String listOwner = req.getParameter("listOwner");
         try {
-            String listId = UUID.randomUUID().toString();
-            MockTodos.put(listId, todoList);
-            todoList.putItem("dateCreated", LocalDateTime.now());
-            todoList.putItem("listId", listId);
-            todoList.setObserver(this.observer);
-            observer.write(listId, JWriter.stringify(todoList));    // generate client update event manually
+            TodoList todoList = new TodoList();
+            todoList.setListId(listId);
+            todoList.setListName(listName);
+            Member owner = new Member();
+            owner.setListId(listId);
+            owner.setName(listOwner);
+            todoList.setListOwner(owner);
+            todoList.setDateCreated(LocalDateTime.now());
+            JNode todoListNode = JReader.parseJson(new StringReader(JWriter.stringify(JClass.nodify(todoList))));
+
+            Objects.requireNonNull(todoListNode).putItem("todos", todos);
+            todos.parent(todoListNode);
+
+            MockTodos.put(listId, todoListNode);
+            todos.setObserver(this.observer);
+            observer.write(listId, "initialized", JWriter.stringify(todos));    // generate client update event manually
 
             //prepare response
             resp.setStatus(201);
             resp.setContentType("application/json");
-            resp.getWriter().write(JWriter.stringify(todoList));
+            resp.getWriter().write(JWriter.stringify(todoListNode));
         } catch (Exception e) {
             JNode error = new JObject();
             error.putItem("message", e.getMessage());
@@ -49,12 +65,13 @@ public class StartTodosServlet extends HttpServlet {
     }
 
     /*
-     * Toggle the 'completed' status of a task
+     * Update the todo-list
      * */
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         JNode update = JReader.parseJson(req.getInputStream());
         String task = update.getItem("task");
+        String taskUpdate = req.getParameter("task");
         String listId = update.getItem("listId");
         boolean completed = update.getItem("completed");
         String action = req.getParameter("action");
@@ -72,6 +89,24 @@ public class StartTodosServlet extends HttpServlet {
                         }
                     }
                 }
+
+                if (action.equals("update")) {
+                    for (Object t : todos) {
+                        JNode taskNode = (JNode) t;
+                        if (taskNode.getItem("task").equals(task)) {
+                            taskNode.putItem(task, taskUpdate);    // this will trigger client update event
+                            break;
+                        }
+                    }
+                }
+
+                if (action.equals("toggleAll")) {
+                    for (Object t : todos) {
+                        JNode taskNode = (JNode) t;
+                        taskNode.putItem("completed", completed);    // this will trigger client update event
+                    }
+                }
+
                 if (action.equals("create")) {
                     todos.addItem(update);                  // this will trigger client update event
                 }
@@ -110,12 +145,25 @@ public class StartTodosServlet extends HttpServlet {
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String task = req.getParameter("task");
         String listId = req.getParameter("listId");
+        String filter = req.getParameter("completed");
 
         try {
             JNode todoList = MockTodos.get(listId);
             if (todoList != null) {
-                JArray todos = todoList.getItem("todos");
-                todos.removeWhere(node -> node.getItem("task").equals(task)); // this will trigger client update event
+                if (task != null) {
+                    JArray todos = todoList.getItem("todos");
+                    todos.removeFirst(node -> node.getItem("task").equals(task)); // this will trigger client update event
+                }
+
+                if (filter != null && filter.equalsIgnoreCase("all")) {
+                    JArray todos = todoList.getItem("todos");
+                    todos.removeAll(); // this will trigger client update event
+                }
+
+                if (filter != null && filter.equalsIgnoreCase("completed")) {
+                    JArray todos = todoList.getItem("todos");
+                    todos.removeAny(t -> t.getItem("completed").equals(true)); // this will trigger client update event
+                }
 
                 JNode ok = new JObject();
                 ok.putItem("status", "ok");
