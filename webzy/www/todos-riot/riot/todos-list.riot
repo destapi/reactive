@@ -8,7 +8,8 @@
                         type="checkbox"
                         checked={ item.completed }
                         onclick={ () => props.toggleDone(item.id) } />
-                { item.task }
+                <i>{ item.task }</i>
+                <i class="fa fa-times remove" aria-hidden="true" onclick="{() => props.removeTodo(item.id)}"></i>
             </label>
         </li>
     </ul>
