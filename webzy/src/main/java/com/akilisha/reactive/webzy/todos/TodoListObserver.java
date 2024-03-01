@@ -20,28 +20,23 @@ public class TodoListObserver implements Observer {
         if (!writers.containsKey(listId)) {
             writers.put(listId, new HashMap<>());
         }
-        if (writers.get(listId).containsKey(listOwner)) {
-            PrintWriter existing = writers.get(listId).get(listOwner);
+        refreshConnection(writers.get(listId), listOwner, out);
+    }
+
+    public void refreshConnection(Map<String, PrintWriter> connections, String listOwner, PrintWriter out) {
+        if (connections.containsKey(listOwner)) {
+            PrintWriter existing = connections.get(listOwner);
             existing.close();
         }
         //save a new writer
-        writers.get(listId).put(listOwner, out);
-    }
-
-    public void dropConnection(String listId, String listOwner) {
-        if (writers.containsKey(listId)) {
-            if (writers.get(listId).containsKey(listOwner)) {
-                PrintWriter existing = (PrintWriter) writers.get(listId);
-                existing.close();
-            }
-        }
+        connections.put(listOwner, out);
     }
 
     @Override
     public void set(Object target, String path, String key, Object oldValue, Object newValue) {
         if (path.equals(".sharedTo")) {
             String listId = ((JNode) newValue).getItem("listId");
-            write(listId, "addShare", JWriter.stringify(Objects.requireNonNull(newValue)));
+            write(listId, "newShare", JWriter.stringify(Objects.requireNonNull(newValue)));
         } else if (path.isBlank()) {
             String listId = ((JNode) target).getItem("listId");
             write(listId, "updateList", String.format("{\"%s\": \"%s\"}", key, Objects.requireNonNull(newValue)));

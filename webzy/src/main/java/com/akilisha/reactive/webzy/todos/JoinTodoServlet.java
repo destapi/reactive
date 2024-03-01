@@ -57,14 +57,15 @@ public class JoinTodoServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         JNode member = JReader.parseJson(req.getInputStream());
-        String action = req.getParameter("action");
         try {
             String listId = member.getItem("listId");
             JNode todoList = MockTodos.get(listId);
 
-            if (action.equals("accept") && todoList != null) {
-                String memberName = member.getItem("name");
-                ((JObject) todoList.getItem("members")).putItem(memberName, member); // this will trigger client update event
+            if (todoList != null) {
+                String memberName = member.getItem("guestName");
+                JNode listMembers = todoList.getItem("sharedTo");
+                member.parent(listMembers);
+                listMembers.putItem(memberName, member); // this will trigger client update event
 
                 //prepare response
                 resp.setStatus(201);

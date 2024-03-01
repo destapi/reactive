@@ -1,9 +1,28 @@
 import {v4 as uuidv4} from "uuid";
 import {store} from "./store";
 
-export const listId = "testing-todos";
-export const listName = "Awesome Todos";
-export const listOwner = "jimmy";
+export const userCoordinates = {
+    listId: "testing-todos",
+    listName: "Awesome Todos",
+    listOwner: "jimmy",
+    userType: "organizer",
+    guestName: null
+};
+
+// for organizer, use - http://localhost:8080/?listId=ijummaa&listOwner=jimmy&listName=alhamisi
+// for guest, use - http://localhost:8080/?listId=ijummaa&listOwner=jimmy&listName=alhamisi&userType=guest&guestName=kadzo
+
+const regex = /\??((\w+)=(\w+))/gm
+const matches = window.location.search.match(regex);
+if (matches) {
+    matches.map(m => m.startsWith("?") ? m.substring(1) : m).reduce((acc, curr) => {
+        const [key, value] = curr.split("=");
+        acc[key] = value;
+        return acc;
+    }, userCoordinates)
+}
+
+const {listId, listName, listOwner, userType, guestName} = userCoordinates;
 
 export const initialTodos = [
     {listId, id: uuidv4(), task: 'Avoid excessive caffeine', completed: true},
@@ -11,13 +30,27 @@ export const initialTodos = [
     {listId, id: uuidv4(), task: 'Be nice to people'}
 ]
 
-export function startTodos(todos) {
-    fetch(`http://localhost:9080/todos/?listId=${listId}&listName=${listName}&listOwner=${listOwner}`, {
+export function startTodosAction(data) {
+    fetch(`http://localhost:9080/todos/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(todos)
+        body: JSON.stringify(data)
+    })
+        .then(res => res.json())
+        .then(data => {
+            console.log(data);
+        })
+}
+
+export function joinTodosAction(data) {
+    fetch(`http://localhost:9080/join/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
     })
         .then(res => res.json())
         .then(data => {
@@ -70,7 +103,12 @@ export function startEventSource() {
     });
 
     evtSource.onmessage = (event) => {
-        startTodos(initialTodos);
+        if(userType === "organizer") {
+            startTodosAction({listId, listName, listOwner, todos: initialTodos});
+        }
+        else{
+            joinTodosAction({listId, guestName})
+        }
     };
 
     evtSource.addEventListener('initialized', event => {
@@ -95,6 +133,10 @@ export function startEventSource() {
         console.log(event.data)
         const data = JSON.parse(event.data);
         store.getState().removeTodo(data.id)
+    });
+
+    evtSource.addEventListener('newShare', event => {
+        console.log(event.data)
     });
 
     evtSource.onerror = function (e) {

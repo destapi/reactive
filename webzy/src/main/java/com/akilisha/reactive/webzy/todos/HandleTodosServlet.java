@@ -28,10 +28,10 @@ public class HandleTodosServlet extends HttpServlet {
      * */
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        JNode todos = JReader.parseJson(req.getInputStream());
-        String listId = req.getParameter("listId");
-        String listName = req.getParameter("listName");
-        String listOwner = req.getParameter("listOwner");
+        JNode initialItems = JReader.parseJson(req.getInputStream());
+        String listId = initialItems.getItem("listId");
+        String listName = initialItems.getItem("listName");
+        String listOwner = initialItems.getItem("listOwner");
         try {
             TodoList todoList = new TodoList();
             todoList.setListId(listId);
@@ -41,19 +41,19 @@ public class HandleTodosServlet extends HttpServlet {
             owner.setName(listOwner);
             todoList.setListOwner(owner);
             todoList.setDateCreated(LocalDateTime.now());
-            JNode todoListNode = JReader.parseJson(new StringReader(JWriter.stringify(JClass.nodify(todoList))));
+            JNode cachedTodoList = JReader.parseJson(new StringReader(JWriter.stringify(JClass.nodify(todoList))));
 
-            Objects.requireNonNull(todoListNode).putItem("todos", todos);
-            todos.parent(todoListNode);
+            Objects.requireNonNull(cachedTodoList).putItem("todos", initialItems.getItem("todos"));
+            initialItems.parent(cachedTodoList);
 
-            MockTodos.put(listId, todoListNode);
-            todoListNode.setObserver(this.observer);
-            observer.write(listId, "initialized", JWriter.stringify(todos));    // generate client update event manually
+            MockTodos.put(listId, cachedTodoList);
+            cachedTodoList.setObserver(this.observer);
+            observer.write(listId, "initialized", JWriter.stringify(initialItems));    // generate client update event manually
 
             //prepare response
             resp.setStatus(201);
             resp.setContentType("application/json");
-            resp.getWriter().write(JWriter.stringify(todoListNode));
+            resp.getWriter().write(JWriter.stringify(cachedTodoList));
         } catch (Exception e) {
             JNode error = new JObject();
             error.putItem("message", e.getMessage());

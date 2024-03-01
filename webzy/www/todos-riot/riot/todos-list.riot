@@ -35,7 +35,7 @@
             onMounted(props,) {
                 unsubscribe = props.subscribe((state) => {
                     this.update({
-                        todos: [...state.todos]
+                        todos: [...state.todoList.todos]
                     })
                 });
                 this.props.startEventSource()
