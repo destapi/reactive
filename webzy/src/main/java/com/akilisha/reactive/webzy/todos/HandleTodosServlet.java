@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.Optional;
 
 public class HandleTodosServlet extends HttpServlet {
 
@@ -70,10 +71,7 @@ public class HandleTodosServlet extends HttpServlet {
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         JNode update = JReader.parseJson(req.getInputStream());
-        String task = update.getItem("task");
-        String taskUpdate = req.getParameter("task");
         String listId = update.getItem("listId");
-        boolean completed = update.getItem("completed");
         String action = req.getParameter("action");
 
         try {
@@ -81,26 +79,30 @@ public class HandleTodosServlet extends HttpServlet {
             if (todoList != null) {
                 JArray todos = todoList.getItem("todos");
                 if (action.equals("toggle")) {
-                    for (Object t : todos) {
-                        JNode taskNode = (JNode) t;
-                        if (taskNode.getItem("task").equals(task)) {
-                            taskNode.putItem("completed", !completed);    // this will trigger client update event
-                            break;
+                    String id = update.getItem("id");
+                    todos.replaceItem(node -> {
+                        if (node.getItem("id").equals(id)) {
+                            node.putItem("completed", Optional.ofNullable(node.getItem("completed")).map(bool -> !(boolean)bool).orElse(true)); // this will trigger client update event
+                            return true;
                         }
-                    }
+                        return false;
+                    });
                 }
 
                 if (action.equals("update")) {
-                    for (Object t : todos) {
-                        JNode taskNode = (JNode) t;
-                        if (taskNode.getItem("task").equals(task)) {
-                            taskNode.putItem(task, taskUpdate);    // this will trigger client update event
-                            break;
+                    String task = update.getItem("task");
+                    String id = update.getItem("id");
+                    todos.replaceItem(node -> {
+                        if (node.getItem("id").equals(id)) {
+                            node.putItem("task", task); // this will trigger client update event
+                            return true;
                         }
-                    }
+                        return false;
+                    });
                 }
 
                 if (action.equals("toggleAll")) {
+                    boolean completed = update.getItem("completed");
                     for (Object t : todos) {
                         JNode taskNode = (JNode) t;
                         taskNode.putItem("completed", completed);    // this will trigger client update event

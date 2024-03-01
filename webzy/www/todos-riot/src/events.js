@@ -26,13 +26,27 @@ export function startTodos(todos)
         })
 }
 
-export function createNewTodo(task){
+export function addTodoAction(task){
     fetch(`http://localhost:9080/todos/?action=create`,{
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({listId, id: uuidv4(), task, completed: false})
+    })
+        .then(res => res.json())
+        .then(data => {
+            console.log("on create todo", data)
+        })
+}
+
+export function toggleDoneAction(id){
+    fetch(`http://localhost:9080/todos/?action=toggle`,{
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({listId, id})
     })
         .then(res => res.json())
         .then(data => {
@@ -62,8 +76,10 @@ export function startEventSource() {
         store.getState().addTodo(data)
     });
 
-    evtSource.addEventListener('get', event => {
-        console.log(evtSource.readyState)
+    evtSource.addEventListener('updateTask', event => {
+        console.log(event.data)
+        const data = JSON.parse(event.data);
+        store.getState().updateTodo(data)
     });
 
     evtSource.addEventListener('delete', event => {

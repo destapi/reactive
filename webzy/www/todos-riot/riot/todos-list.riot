@@ -7,7 +7,7 @@
                 <input
                         type="checkbox"
                         checked={ item.completed }
-                        onclick={ () => props.toggleDone(item.id) } />
+                        onclick={ () => props.toggleDoneAction(item.id) } />
                 <i>{ item.task }</i>
                 <i class="fa fa-times remove" aria-hidden="true" onclick="{() => props.removeTodo(item.id)}"></i>
             </label>
@@ -53,7 +53,7 @@
                 e.preventDefault()
 
                 if (this.state.task) {
-                    this.props.createNewTodo(this.state.task);
+                    this.props.addTodoAction(this.state.task);
                     this.update({
                         task: ''
                     })

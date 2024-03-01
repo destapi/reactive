@@ -1,7 +1,7 @@
 import * as riot from 'riot';
 import App from '../riot/todos-list.riot';
 import {store} from "./store";
-import {startEventSource, createNewTodo} from "./events";
+import {startEventSource, addTodoAction, toggleDoneAction} from "./events";
 
 const {getState, setState, subscribe, getInitialState} = store;
 
@@ -15,9 +15,9 @@ const app = mountApp(
     {
         title: 'Awesome Todos',
         todos,
-            createNewTodo,
+        addTodoAction,
         editTodo,
-        toggleDone,
+        toggleDoneAction,
         removeTodo,
         subscribe,
         startEventSource,
