@@ -6,9 +6,9 @@ export const listName = "Awesome Todos";
 export const listOwner = "jimmy";
 
 export const initialTodos = [
-    {id: uuidv4(), task: 'Avoid excessive caffeine', completed: true},
-    {id: uuidv4(), task: 'Be less provocative'},
-    {id: uuidv4(), task: 'Be nice to people'}
+    {listId, id: uuidv4(), task: 'Avoid excessive caffeine', completed: true},
+    {listId, id: uuidv4(), task: 'Be less provocative'},
+    {listId, id: uuidv4(), task: 'Be nice to people'}
 ]
 
 export function startTodos(todos)
@@ -23,6 +23,20 @@ export function startTodos(todos)
         .then(res => res.json())
         .then(data => {
             console.log(data);
+        })
+}
+
+export function createNewTodo(task){
+    fetch(`http://localhost:9080/todos/?action=create`,{
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({listId, id: uuidv4(), task, completed: false})
+    })
+        .then(res => res.json())
+        .then(data => {
+            console.log("on create todo", data)
         })
 }
 
@@ -42,8 +56,10 @@ export function startEventSource() {
         store.getState().initTodos(data)
     });
 
-    evtSource.addEventListener('set', event => {
-        console.log(evtSource.readyState)
+    evtSource.addEventListener('newTask', event => {
+        console.log(event.data)
+        const data = JSON.parse(event.data);
+        store.getState().addTodo(data)
     });
 
     evtSource.addEventListener('get', event => {

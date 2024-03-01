@@ -6,8 +6,8 @@ export const store = createStore((set) => ({
     initTodos: (todos) => set((state) => {
         return ({...state, todos})
     }),
-    addTodo: (task) => set((state) => {
-        return ({...state, todos: [...state.todos, {id: uuidv4(), task, completed: false}]})
+    addTodo: (todo) => set((state) => {
+        return ({...state, todos: [...state.todos, todo]})
     }),
     editTodo: (id, task) => set((state) => {
         return ({

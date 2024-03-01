@@ -53,7 +53,7 @@
                 e.preventDefault()
 
                 if (this.state.task) {
-                    this.props.addTodo(this.state.task);
+                    this.props.createNewTodo(this.state.task);
                     this.update({
                         task: ''
                     })

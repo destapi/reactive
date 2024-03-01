@@ -46,7 +46,7 @@ public class HandleTodosServlet extends HttpServlet {
             todos.parent(todoListNode);
 
             MockTodos.put(listId, todoListNode);
-            todos.setObserver(this.observer);
+            todoListNode.setObserver(this.observer);
             observer.write(listId, "initialized", JWriter.stringify(todos));    // generate client update event manually
 
             //prepare response
@@ -65,7 +65,7 @@ public class HandleTodosServlet extends HttpServlet {
     }
 
     /*
-     * Update the todo-list
+     * Modify the todo-list
      * */
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
