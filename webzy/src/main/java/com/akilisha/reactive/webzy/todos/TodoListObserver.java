@@ -21,7 +21,7 @@ public class TodoListObserver implements Observer {
             writers.put(listId, new HashMap<>());
         }
         if (writers.get(listId).containsKey(listOwner)) {
-            PrintWriter existing = (PrintWriter) writers.get(listId);
+            PrintWriter existing = writers.get(listId).get(listOwner);
             existing.close();
         }
         //save a new writer

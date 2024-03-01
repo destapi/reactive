@@ -22,6 +22,8 @@
     </form>
 
     <script>
+
+        let unsubscribe;
         export default {
             onBeforeMount(props, state) {
                 // initial state
@@ -31,11 +33,15 @@
                 }
             },
             onMounted(props, ) {
-                props.subscribe((state) => {
+                unsubscribe = props.subscribe((state) => {
                     this.update({
                         todos: [...state.todos]
                     })
-                })
+                });
+                this.props.startEventSource()
+            },
+            onUnmounted(props, state) {
+                unsubscribe();
             },
             edit(e) {
                 // update only the text state
