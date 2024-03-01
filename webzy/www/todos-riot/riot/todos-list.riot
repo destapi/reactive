@@ -7,7 +7,7 @@
                 <input
                         type="checkbox"
                         checked={ item.completed }
-                        onclick={ () => toggle(item) } />
+                        onclick={ () => props.toggleDone(item.id) } />
                 { item.task }
             </label>
         </li>
@@ -29,6 +29,13 @@
                     task: ''
                 }
             },
+            onMounted(props, ) {
+                props.subscribe((state) => {
+                    this.update({
+                        todos: [...state.todos]
+                    })
+                })
+            },
             edit(e) {
                 // update only the text state
                 this.update({
@@ -39,21 +46,12 @@
                 e.preventDefault()
 
                 if (this.state.task) {
+                    this.props.addTodo(this.state.task);
                     this.update({
-                        todos: [
-                            ...this.state.todos,
-                            // add a new item
-                            {task: this.state.task}
-                        ],
                         task: ''
                     })
                 }
             },
-            toggle(item) {
-                item.completed = !item.completed
-                // trigger a component update
-                this.update()
-            }
         }
     </script>
 </todos-list>
